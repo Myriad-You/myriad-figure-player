@@ -1,12 +1,14 @@
 import type { Anime25DPose } from './pose'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { FigureError } from '../errors'
 import { IDENTITY_DRIVER } from './driver'
-import { blendPoses, poseFromJSON, poseToJSON } from './pose'
+import { blendPoses, POSE_VERSION, poseFromJSON, poseToJSON } from './pose'
 
 function poseOf(at: number, gesture = 'wave'): Anime25DPose {
   return {
-    version: 1,
+    version: POSE_VERSION,
     figure: '2-abc',
     time: at,
     driver: { ...IDENTITY_DRIVER, headYaw: at, talking: at > 0.5 },
@@ -37,10 +39,32 @@ test('a pose is itself again from JSON, to the bit', () => {
   const pose = poseOf(0.7)
   pose.frame.bodyPivotY = -0
   assert.deepEqual(poseFromJSON(poseToJSON(pose)), pose)
-  // The driver keeps the keys poses are written with.
-  const { driver } = JSON.parse(poseToJSON(pose)) as { driver: Record<string, unknown> }
-  assert.deepEqual(Object.keys(driver), Object.keys(pose.driver).map(key => ({ headYaw: 'angleX', headPitch: 'angleY', headRoll: 'angleZ', lidL: 'eyeOpenL', lidR: 'eyeOpenR', gazeX: 'eyeX', gazeY: 'eyeY', jaw: 'mouthOpen', lipCurve: 'mouthForm', browLift: 'brow', browTiltL: 'browAngL', browTiltR: 'browAngR', browTilt: 'browAngSym', bodyLean: 'body', torsoFollow: 'bodyYaw', rearHairSway: 'physAmp', torsoBreath: 'idle', physics: 'phys', idleSway: 'rand', autoBlink: 'blink', followPointer: 'mouse', talking: 'talk' } as Record<string, string>)[key] ?? key))
-  assert.equal(driver.angleX, 0.7)
+  // The JSON is of version 2, its driver under the driver's own names.
+  const written = JSON.parse(poseToJSON(pose)) as { version: number, driver: Record<string, unknown> }
+  assert.equal(written.version, 2)
+  assert.deepEqual(Object.keys(written.driver), Object.keys(pose.driver))
+  assert.equal(written.driver.headYaw, 0.7)
+})
+
+test('a pose written as version 1 reads as the same pose written now', () => {
+  // Written by the writer of version 1, which kept sixteen driver fields under other keys (angleX for headYaw…).
+  const text = readFileSync(new URL('./fixtures/pose-v1.json', import.meta.url), 'utf8')
+  assert.equal((JSON.parse(text) as { version: number }).version, 1)
+  const pose = poseFromJSON(text)
+  assert.equal(pose.version, POSE_VERSION)
+  assert.deepEqual(pose.driver, { ...IDENTITY_DRIVER, headYaw: 0.7, lidL: 0.4, jaw: 0.3, browTiltL: -0.2, rearHairSway: 0.9, talking: true })
+  assert.deepEqual(Object.keys(pose.driver).toSorted(), Object.keys(IDENTITY_DRIVER).toSorted())
+  assert.deepEqual(poseFromJSON(poseToJSON(pose)), pose)
+  assert.equal(poseToJSON(poseFromJSON(poseToJSON(pose))), poseToJSON(pose))
+})
+
+test('a pose of a version this player does not read is refused by its version', () => {
+  const text = poseToJSON(poseOf(0.7))
+  for (const version of [0, 3, '2', null]) {
+    const other = JSON.stringify({ ...JSON.parse(text), version })
+    assert.throws(() => poseFromJSON(other), (error: unknown) =>
+      error instanceof FigureError && error.code === 'anime25dPoseVersion' && error.params.version === String(version))
+  }
 })
 
 test('vertices that are a view of a longer buffer are written as their own', () => {

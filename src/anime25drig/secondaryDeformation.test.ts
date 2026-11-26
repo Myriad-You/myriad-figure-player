@@ -108,7 +108,7 @@ test('pose residual is blended once, before parent roll, and never applied to th
   const profile = shellProfile()
   const rest = new Float32Array([profile.head.centerX, profile.head.centerY])
   const bound = bindPoseCorrections([{
-    surface: 'head', at: { angleX: 0.8, angleY: -0.6 },
+    surface: 'head', at: { headYaw: 0.8, headPitch: -0.6 },
     patches: [{ x: 0, y: 0, radiusX: 0.6, radiusY: 0.4, dx: 0.04, dy: -0.03 }],
   }], 'head', rest, profile.head)!
   const driver = { ...IDENTITY_DRIVER, headYaw: 0.8, headPitch: -0.6 }

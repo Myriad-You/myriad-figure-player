@@ -1,4 +1,4 @@
-import type { PoseCorrection } from './poseCorrections'
+import type { PoseCorrection, PoseCorrectionV7 } from './poseCorrections'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { IDENTITY_DRIVER } from './driver'
@@ -6,6 +6,9 @@ import {
   applyPoseCorrections,
   bindPoseCorrections,
   isPoseCorrections,
+  isPoseCorrectionsV7,
+  poseCorrectionsFromV7,
+  poseCorrectionsToV7,
   writePoseCorrectionWeights,
 } from './poseCorrections'
 
@@ -18,7 +21,7 @@ const head = {
 }
 const correction: PoseCorrection = {
   surface: 'head',
-  at: { angleX: 0.8, angleY: -0.6 },
+  at: { headYaw: 0.8, headPitch: -0.6 },
   patches: [{ x: 0, y: 0, radiusX: 0.6, radiusY: 0.4, dx: 0.05, dy: -0.04 }],
 }
 const rest = new Float32Array([300, 250, 320, 270, 650, 800])
@@ -69,7 +72,7 @@ test('local brushes leave distant vertices and other surfaces untouched', () => 
 
 test('closure combinations use continuous final eye aperture, not expression names', () => {
   const bound = bindPoseCorrections(
-    [{ ...correction, at: { angleX: 0.8, eyeCloseL: 1 } }],
+    [{ ...correction, at: { headYaw: 0.8, lidCloseL: 1 } }],
     'head',
     rest,
     head,
@@ -127,17 +130,59 @@ test('rejects malformed, unbounded, single-axis and duplicate-corner data', () =
     {},
     [null],
     Array.from({ length: 17 }).fill(correction),
-    [{ ...correction, at: { angleX: 0.8 } }],
-    [{ ...correction, at: { angleX: 0, angleY: 0.6 } }],
-    [{ ...correction, at: { angleX: 0.6, eyeCloseL: -1 } }],
-    [{ ...correction, at: { eyeCloseL: 1, mouthOpen: 1 } }],
-    [{ ...correction, at: { angleX: 0.6, body: 1 } }],
-    [{ ...correction, at: { angleX: Infinity, angleY: 0.6 } }],
+    [{ ...correction, at: { headYaw: 0.8 } }],
+    [{ ...correction, at: { headYaw: 0, headPitch: 0.6 } }],
+    [{ ...correction, at: { headYaw: 0.6, lidCloseL: -1 } }],
+    [{ ...correction, at: { lidCloseL: 1, jaw: 1 } }],
+    [{ ...correction, at: { headYaw: 0.6, body: 1 } }],
+    [{ ...correction, at: { headYaw: Infinity, headPitch: 0.6 } }],
     [{ ...correction, patches: [] }],
     [{ ...correction, patches: [null] }],
     [{ ...correction, patches: [{ ...correction.patches[0], radiusX: 0 }] }],
     [{ ...correction, patches: [{ ...correction.patches[0], dx: 0.3 }] }],
-    [correction, { ...correction, at: { angleY: -1, angleX: 1 } }],
+    [correction, { ...correction, at: { headPitch: -1, headYaw: 1 } }],
   ])
     assert.equal(isPoseCorrections(bad), false, JSON.stringify(bad))
+})
+
+const V7: PoseCorrectionV7[] = [
+  { surface: 'head', at: { angleX: 0.8, angleY: -0.6 }, patches: correction.patches },
+  { surface: 'front-hair', at: { angleY: 0.5, eyeCloseR: 1, mouthOpen: 0.4 }, patches: correction.patches },
+  { surface: 'head', at: { eyeCloseL: 0.9, angleX: -0.7 }, patches: correction.patches },
+]
+
+test('version 7 keys are its own: each axis renamed in its place, and nothing else', () => {
+  const read = poseCorrectionsFromV7(V7)
+  assert.deepEqual(read, [
+    { surface: 'head', at: { headYaw: 0.8, headPitch: -0.6 }, patches: correction.patches },
+    { surface: 'front-hair', at: { headPitch: 0.5, lidCloseR: 1, jaw: 0.4 }, patches: correction.patches },
+    { surface: 'head', at: { lidCloseL: 0.9, headYaw: -0.7 }, patches: correction.patches },
+  ])
+  assert.deepEqual(read.map(c => Object.keys(c.at)), V7.map(c => Object.keys(c.at).map(k => ({ angleX: 'headYaw', angleY: 'headPitch', eyeCloseL: 'lidCloseL', eyeCloseR: 'lidCloseR', mouthOpen: 'jaw' } as Record<string, string>)[k])))
+  assert.deepEqual(poseCorrectionsToV7(read), V7)
+  assert.equal(isPoseCorrectionsV7(V7), true)
+  assert.equal(isPoseCorrections(read), true)
+})
+
+test('each vocabulary is checked as its own: neither reads the other\'s keys, nor a mix', () => {
+  assert.equal(isPoseCorrections(V7), false)
+  assert.equal(isPoseCorrectionsV7(poseCorrectionsFromV7(V7)), false)
+  assert.equal(isPoseCorrectionsV7([{ ...correction, at: { angleX: 0.8, headPitch: -0.6 } }]), false)
+  assert.equal(isPoseCorrections([{ ...correction, at: { angleX: 0.8, headPitch: -0.6 } }]), false)
+  assert.equal(isPoseCorrectionsV7([{ ...correction, at: { angleX: 0.8 } }]), false)
+  assert.equal(isPoseCorrectionsV7([V7[0], { ...V7[0], at: { angleY: -1, angleX: 1 } }]), false)
+})
+
+test('corrections read from version 7 move the mesh as the same written now', () => {
+  const vertices = new Float32Array([300, 250, 320, 270, 280, 230, 650, 800])
+  const weights = (corrections: PoseCorrection[]) => {
+    const bound = bindPoseCorrections(corrections, 'head', vertices, head)!
+    writePoseCorrectionWeights(bound, { ...IDENTITY_DRIVER, headYaw: 0.5, headPitch: -0.4, lidL: 0.2, jaw: 0.3 })
+    return bound
+  }
+  assert.deepEqual(weights(poseCorrectionsFromV7(V7)), weights([
+    { surface: 'head', at: { headYaw: 0.8, headPitch: -0.6 }, patches: correction.patches },
+    { surface: 'front-hair', at: { headPitch: 0.5, lidCloseR: 1, jaw: 0.4 }, patches: correction.patches },
+    { surface: 'head', at: { lidCloseL: 0.9, headYaw: -0.7 }, patches: correction.patches },
+  ]))
 })

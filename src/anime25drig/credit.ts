@@ -9,5 +9,9 @@ export const CREDITED_AUTHORS = [
   { handle: '852wa', url: 'https://github.com/852wa' },
   { handle: 'izumix77', url: 'https://github.com/izumix77' },
 ] as const
+/** A package of version 7 (docs/format.md) is of this kind; it is the version writers emit. */
 export const ANIME25D_PLAYBACK_KIND = 'anime-2.5d-rig' as const
 export const ANIME25D_PLAYBACK_VERSION = 7
+/** The current version of the package format (docs/format.md) and its kind. */
+export const FIGURE_PACKAGE_KIND = 'myriad-figure' as const
+export const FIGURE_PACKAGE_VERSION = 8

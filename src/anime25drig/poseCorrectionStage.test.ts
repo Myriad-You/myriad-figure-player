@@ -6,7 +6,7 @@ import { pickPoseCorrectionPoint, projectPoseCorrectionPatch, viewDeltaToPoseCor
 const head = { centerX: 100, centerY: 100, radiusX: 50, radiusY: 40, radiusZ: 40 }
 const still = { bodyPivotX: 0, bodyPivotY: 0, bodyRotationCosine: 1, bodyRotationSine: 0 }
 const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1])
-const AT = { angleX: 0.5, angleY: 0.3 }
+const AT = { headYaw: 0.5, headPitch: 0.3 }
 const HEAD = { surface: 'head' as const, at: AT }
 const AT_POSE = { headYaw: 0.5, headPitch: 0.3, lidL: 1, lidR: 1, jaw: 0 }
 

@@ -1,15 +1,14 @@
-import type {
-  ANIME25D_LICENSE,
-  ANIME25D_PROJECT_URL } from './credit'
-import type { PoseCorrection } from './poseCorrections'
+import type { PoseCorrection, PoseCorrectionV7 } from './poseCorrections'
 import type { Anime25DTurnKeyforms } from './turnKeyforms'
 import {
   ANIME25D_PLAYBACK_KIND,
   ANIME25D_PLAYBACK_VERSION,
   ANIME25D_PROJECT_NAME,
+  FIGURE_PACKAGE_KIND,
+  FIGURE_PACKAGE_VERSION,
 } from './credit'
-import { isEnhancement, isOptionalPartProfile, isPlaybackAnchors, isPlaybackCanvas, isPlaybackLayers, playbackMeshesFit } from './playbackValidation'
-import { isPoseCorrections } from './poseCorrections'
+import { isCredits, isEnhancement, isOptionalPartProfile, isPlaybackAnchors, isPlaybackCanvas, isPlaybackLayers, playbackMeshesFit } from './playbackValidation'
+import { isPoseCorrections, isPoseCorrectionsV7 } from './poseCorrections'
 import { isAnime25DTurnKeyforms } from './turnKeyforms'
 
 export type Anime25DFade =
@@ -297,7 +296,7 @@ export interface Anime25DTorsoShellProfile {
   neckDepth?: number
 }
 
-export interface Anime25DShellProfile {
+export interface Anime25DShellProfile<Correction = PoseCorrection> {
   version: 1
   source: 'anchor-derived' | 'authored'
   enabled: boolean
@@ -318,7 +317,7 @@ export interface Anime25DShellProfile {
   }
   torso: Anime25DTorsoShellProfile
   /** Authored residuals; absent means this asset has no combination corrections. */
-  poseCorrections?: PoseCorrection[]
+  poseCorrections?: Correction[]
 }
 
 export type Anime25DMouthMaterial =
@@ -358,19 +357,14 @@ export interface Anime25DMouthProfile {
   bridges: Anime25DMouthBridgeTuning[]
 }
 
-export interface Anime25DPlayback {
-  kind: typeof ANIME25D_PLAYBACK_KIND
-  version: typeof ANIME25D_PLAYBACK_VERSION
-  engine: typeof ANIME25D_PROJECT_NAME
-  engineUrl: typeof ANIME25D_PROJECT_URL
-  license: typeof ANIME25D_LICENSE
-  copyright: string
+/** What a package holds whatever its version: all but its identity, and its pose corrections keyed as `Correction`. */
+export interface Anime25DPlaybackContent<Correction> {
   pixelCanvas: { width: number; height: number }
   layers: Anime25DPlaybackLayer[]
   anchors: Anime25DPlaybackAnchors
   mouthProfile: Anime25DMouthProfile
   chestProfile: Anime25DChestProfile
-  shellProfile: Anime25DShellProfile
+  shellProfile: Anime25DShellProfile<Correction>
   /** The head's turn as keyed shapes per part; absent, the turn is computed. */
   turnKeyforms?: Anime25DTurnKeyforms
   /** A standing figure's body turn as keyed shapes per body part (bodyTurnKeyforms); absent, the torso is a cylinder. */
@@ -385,6 +379,34 @@ export interface Anime25DPlayback {
   /** A full figure stands on its soles (the default) or floats with its legs hanging (figureFloat). */
   figureStance?: 'ground' | 'float'
 }
+
+/** A work a package is made with, credited as its licence asks. */
+export interface FigureCredit {
+  name: string
+  url?: string
+  license?: string
+  copyright?: string
+}
+
+/** A package of the current version (docs/format.md), and the form the runtime holds every package in. */
+export interface Anime25DPlayback extends Anime25DPlaybackContent<PoseCorrection> {
+  kind: typeof FIGURE_PACKAGE_KIND
+  version: typeof FIGURE_PACKAGE_VERSION
+  credits?: FigureCredit[]
+}
+
+/** A package of version 7: its identity names the reference project, and its pose-correction axes have their old keys. */
+export interface Anime25DPlaybackV7 extends Anime25DPlaybackContent<PoseCorrectionV7> {
+  kind: typeof ANIME25D_PLAYBACK_KIND
+  version: typeof ANIME25D_PLAYBACK_VERSION
+  engine: typeof ANIME25D_PROJECT_NAME
+  engineUrl?: string
+  license?: string
+  copyright?: string
+}
+
+/** A package of any version this player reads. */
+export type Anime25DPlaybackDocument = Anime25DPlayback | Anime25DPlaybackV7
 
 /**
  * A part that moves on its own (an earring, a charm, a skirt, a ribbon), as a
@@ -431,21 +453,34 @@ function isCredit(value: unknown): boolean {
   return value === undefined || (typeof value === 'string' && value.length <= 512)
 }
 
-export function isAnime25DPlayback(value: unknown): value is Anime25DPlayback {
+/** A package of a version this player reads, whole and within bounds; its `version` says which checks apply. */
+export function isAnime25DPlayback(value: unknown): value is Anime25DPlaybackDocument {
   if (!value || typeof value !== 'object') return false
   const record = value as Record<string, unknown>
+  switch (record.version) {
+    case ANIME25D_PLAYBACK_VERSION:
+      return record.kind === ANIME25D_PLAYBACK_KIND &&
+        record.engine === ANIME25D_PROJECT_NAME &&
+        [record.engineUrl, record.license, record.copyright].every(isCredit) &&
+        isPlaybackContent(record, isPoseCorrectionsV7)
+    case FIGURE_PACKAGE_VERSION:
+      return record.kind === FIGURE_PACKAGE_KIND &&
+        (record.credits === undefined || isCredits(record.credits)) &&
+        isPlaybackContent(record, isPoseCorrections)
+    default:
+      return false
+  }
+}
+
+function isPlaybackContent(record: Record<string, unknown>, isCorrections: (value: unknown) => boolean): boolean {
   const { pixelCanvas: canvas, layers, anchors, chestProfile, shellProfile, mouthProfile } = record
   return (
-    record.kind === ANIME25D_PLAYBACK_KIND &&
-    record.version === ANIME25D_PLAYBACK_VERSION &&
-    record.engine === ANIME25D_PROJECT_NAME &&
-    [record.engineUrl, record.license, record.copyright].every(isCredit) &&
     isPlaybackCanvas(canvas) &&
     isPlaybackLayers(layers) &&
     isPlaybackAnchors(anchors) &&
     isAnime25DMouthProfile(mouthProfile, canvas.width, canvas.height) &&
     isAnime25DChestProfile(chestProfile, canvas.width, canvas.height) &&
-    isAnime25DShellProfile(shellProfile, canvas.width, canvas.height) &&
+    isAnime25DShellProfile(shellProfile, canvas.width, canvas.height, isCorrections) &&
     (record.turnKeyforms === undefined || isAnime25DTurnKeyforms(record.turnKeyforms)) &&
     (record.bodyTurnKeyforms === undefined || isAnime25DTurnKeyforms(record.bodyTurnKeyforms)) &&
     (record.enhancement === undefined || isEnhancement(record.enhancement)) &&
@@ -459,7 +494,8 @@ export function isAnime25DShellProfile(
   value: unknown,
   canvasWidth: number,
   canvasHeight: number,
-): value is Anime25DShellProfile {
+  isCorrections: (value: unknown) => boolean = isPoseCorrections,
+): value is Anime25DShellProfile<unknown> {
   if (!value || typeof value !== 'object') return false
   const profile = value as Record<string, unknown>
   const head = profile.head as Record<string, unknown> | undefined
@@ -500,7 +536,7 @@ export function isAnime25DShellProfile(
     (torso?.yawFollowScale !== undefined &&
       !numberInRange(torso.yawFollowScale, 0, 1)) ||
     (torso?.neckDepth !== undefined && !numberInRange(torso.neckDepth, 0, 1)) ||
-    (profile.poseCorrections !== undefined && !isPoseCorrections(profile.poseCorrections))
+    (profile.poseCorrections !== undefined && !isCorrections(profile.poseCorrections))
   ) {
     return false
   }

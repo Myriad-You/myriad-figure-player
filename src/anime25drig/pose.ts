@@ -3,6 +3,7 @@ import type { Anime25DContinuousMouthShape } from './continuousMouth'
 import type { Anime25DDriver } from './driver'
 import type { Anime25DRenderFrame } from './renderer'
 import type { Anime25DSpinnerFrame } from './spinnerSticker'
+import { FigureError } from '../errors'
 import { HIDDEN_OPACITY } from './mouthRuntime'
 
 // One drawn frame of the figure as plain data: everything its drawing reads that changes from frame to frame, taken
@@ -58,7 +59,8 @@ export interface Anime25DArmPose {
 }
 
 export interface Anime25DPose {
-  version: 1
+  /** POSE_VERSION; poseFromJSON reads earlier versions into it. */
+  version: typeof POSE_VERSION
   /** The package it was taken of: it is drawn on no other. */
   figure: string
   time: number
@@ -74,11 +76,11 @@ export interface Anime25DPose {
   arms: Anime25DArmPose[]
 }
 
-/**
- * The key a pose's JSON keeps each of these driver fields under; every other field is kept under its own name. The
- * keys are part of the format: a pose written with them reads back the same anywhere.
- */
-const DRIVER_JSON_KEYS = {
+/** The version of a pose and of its JSON (docs/format.md); version 1 is read too. */
+export const POSE_VERSION = 2
+
+/** The key a pose's JSON of version 1 keeps each of these driver fields under; every other field is kept under its own name. */
+const DRIVER_V1_KEYS = {
   headYaw: 'angleX',
   headPitch: 'angleY',
   headRoll: 'angleZ',
@@ -103,13 +105,13 @@ const DRIVER_JSON_KEYS = {
   talking: 'talk',
 } as const satisfies Partial<Record<keyof Anime25DDriver, string>>
 
-const DRIVER_FIELDS_BY_JSON_KEY: Readonly<Record<string, string>> = Object.fromEntries(
-  Object.entries(DRIVER_JSON_KEYS).map(([field, key]) => [key, field]),
+const DRIVER_FIELDS_BY_V1_KEY: Readonly<Record<string, string>> = Object.fromEntries(
+  Object.entries(DRIVER_V1_KEYS).map(([field, key]) => [key, field]),
 )
 
 /**
- * A driver as poses wrote it before `hairWind` and `breathing` were switches of their own: its `idle` (read as
- * `torsoBreath`) switched the hair's wind as well, and the stage always breathed.
+ * A driver as poses of version 1 wrote it before `hairWind` and `breathing` were switches of their own: its `idle`
+ * (read as `torsoBreath`) switched the hair's wind as well, and the stage always breathed.
  */
 function completeDriver(driver: Record<string, unknown>): Record<string, unknown> {
   if (!Object.hasOwn(driver, 'hairWind') && typeof driver.torsoBreath === 'boolean') driver.hairWind = driver.torsoBreath
@@ -122,9 +124,9 @@ function renameKeys(driver: object, names: Readonly<Record<string, string>>): Re
   return Object.fromEntries(Object.entries(driver).map(([key, value]) => [Object.hasOwn(names, key) ? names[key]! : key, value]))
 }
 
-/** The pose as JSON: exact to the bit, its vertices as base64. */
+/** The pose as JSON of POSE_VERSION: exact to the bit, its vertices as base64, its driver under the driver's own names. */
 export function poseToJSON(pose: Readonly<Anime25DPose>): string {
-  return JSON.stringify({ ...pose, driver: renameKeys(pose.driver, DRIVER_JSON_KEYS) }, (_key, value: unknown) => {
+  return JSON.stringify({ ...pose, version: POSE_VERSION }, (_key, value: unknown) => {
     if (value instanceof Float32Array) return { f32: toBase64(value) }
     if (value instanceof Uint16Array) return { u16: toBase64(value) }
     // (What JSON has no word for.)
@@ -133,7 +135,11 @@ export function poseToJSON(pose: Readonly<Anime25DPose>): string {
   })
 }
 
-/** What poseToJSON wrote, back. Throws on what it never writes (no JSON, no base64); whether it is of this figure, renderPose says. */
+/**
+ * What poseToJSON wrote, of this version or version 1, back as a pose of POSE_VERSION. Throws on what it never writes
+ * (no JSON, no base64), and a FigureError (`anime25dPoseVersion`) on a version it does not read; whether it is of
+ * this figure, renderPose says.
+ */
 export function poseFromJSON(text: string): Anime25DPose {
   const pose = JSON.parse(text, (_key, value: unknown) => {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) return value
@@ -146,8 +152,15 @@ export function poseFromJSON(text: string): Anime25DPose {
     if (keys[0] === 'number') return Number(coded)
     return value
   }) as Anime25DPose | null
-  const driver: unknown = pose?.driver
-  if (typeof driver === 'object' && driver !== null) pose!.driver = completeDriver(renameKeys(driver, DRIVER_FIELDS_BY_JSON_KEY)) as unknown as Anime25DDriver
+  const version: unknown = pose?.version
+  if (version === 1) {
+    const driver: unknown = pose!.driver
+    if (typeof driver === 'object' && driver !== null) pose!.driver = completeDriver(renameKeys(driver, DRIVER_FIELDS_BY_V1_KEY)) as unknown as Anime25DDriver
+    pose!.version = POSE_VERSION
+  }
+  else if (version !== POSE_VERSION) {
+    throw new FigureError('anime25dPoseVersion', { version: String(version), read: `1, ${POSE_VERSION}` })
+  }
   return pose as Anime25DPose
 }
 

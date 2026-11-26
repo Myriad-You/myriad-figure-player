@@ -3,7 +3,7 @@ import type { Anime25DDriver } from './anime25drig/driver'
 import type { Anime25DInspection } from './anime25drig/playerInspection'
 import type { Anime25DPose } from './anime25drig/pose'
 import type { VisibleTouchHit } from './anime25drig/touchVisibility'
-import type { Anime25DPlayback } from './anime25drig/types'
+import type { Anime25DPlaybackDocument } from './anime25drig/types'
 import type { MeropeRigManifest } from './rig/types'
 import { Anime25DBasicDriving } from './anime25drig/basicDriving'
 import { Anime25DStage } from './anime25drig/stage'
@@ -25,7 +25,7 @@ export class FigurePlayer {
   /** `random` decides the blinks; seed it for a repeatable figure. Throws a FigureError without WebGL2. */
   constructor(
     canvas: HTMLCanvasElement,
-    playback: Anime25DPlayback,
+    playback: Anime25DPlaybackDocument,
     rigManifest?: MeropeRigManifest,
     random: () => number = Math.random,
   ) {
@@ -63,7 +63,7 @@ export class FigurePlayer {
   }
 
   /** Another outfit; the last one keeps drawing until it is ready, and stays if it fails. */
-  replaceLivePackage(playback: Anime25DPlayback, rigManifest: MeropeRigManifest | undefined, atlasUrl: string): Promise<void> {
+  replaceLivePackage(playback: Anime25DPlaybackDocument, rigManifest: MeropeRigManifest | undefined, atlasUrl: string): Promise<void> {
     return this.stage.replaceLivePackage(playback, rigManifest, atlasUrl)
   }
 

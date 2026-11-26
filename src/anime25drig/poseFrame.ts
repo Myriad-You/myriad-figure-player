@@ -13,6 +13,7 @@ import type { Anime25DArmPose, Anime25DClothPose, Anime25DDrawnArmPose, Anime25D
 import type { Anime25DRenderableLayer, Anime25DRenderFrame } from './renderer'
 import type { Anime25DSpinnerFrame } from './spinnerSticker'
 import { cutFrom } from './partSplit'
+import { POSE_VERSION } from './pose'
 
 // Taking a drawn frame as a pose, and a pose as a frame to draw. The frame drawn for a pose is made of shadows of the
 // layers: the same meshes and textures, the pose's place, opacity and colour; the live layers are not touched.
@@ -61,7 +62,7 @@ export function capturePose(
 ): Anime25DPose {
   const { layers } = figure
   return {
-    version: 1,
+    version: POSE_VERSION,
     figure: state.key,
     time: state.time,
     driver: { ...state.driver },
@@ -129,7 +130,7 @@ const has = (value: unknown, like: object): boolean => record(value) && Object.k
 /** Whether a pose is of this figure, whole: every layer, vertex and arm it is drawn with. Anything may be asked. */
 export function poseFits(figure: PoseFigure, key: string, pose: Readonly<Anime25DPose>): boolean {
   const { layers, collarClip } = figure
-  if (!record(pose) || pose.version !== 1 || pose.figure !== key) return false
+  if (!record(pose) || pose.version !== POSE_VERSION || pose.figure !== key) return false
   if (!(pose.order instanceof Uint16Array) || pose.order.length !== layers.length || new Set(pose.order).size !== layers.length || pose.order.some(at => at >= layers.length)) return false
   if (!has(pose.frame, FRAME) || (pose.frame.bodyLift !== undefined && !liftFits(pose.frame.bodyLift))) return false
   if (!each(pose.layers, layers.length, (own, i) => layerFits(layers[i]!, own))) return false
