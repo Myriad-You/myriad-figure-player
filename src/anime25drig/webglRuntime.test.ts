@@ -8,6 +8,7 @@ import {
   createAtlasTexture,
   createIndexedDeformableMesh,
   loadImage,
+  resetCachedAtlasImagesForTests,
 } from './webglRuntime'
 
 test('mip lod clamp tracks the packed atlas gutter', () => {
@@ -162,6 +163,7 @@ test('same-origin atlas URLs skip CORS so guest origins can load the live face',
 })
 
 test('aborts an in-flight atlas image without leaving live handlers', async () => {
+  resetCachedAtlasImagesForTests()
   let image: FakeImage | null = null
   const NativeImage = globalThis.Image
   const TestImage = function () {
@@ -172,7 +174,7 @@ test('aborts an in-flight atlas image without leaving live handlers', async () =
   globalThis.Image = TestImage as unknown as typeof Image
   try {
     const controller = new AbortController()
-    const pending = loadImage('/atlas-aborted.png', controller.signal)
+    const pending = loadImage('/atlas.png', controller.signal)
     controller.abort()
     await assert.rejects(pending, { name: 'AbortError' })
     assert.equal(image?.src, '')
@@ -180,10 +182,12 @@ test('aborts an in-flight atlas image without leaving live handlers', async () =
     assert.equal(image?.onerror, null)
   } finally {
     globalThis.Image = NativeImage
+    resetCachedAtlasImagesForTests()
   }
 })
 
 test('reuses a decoded atlas image when the live player remounts', async () => {
+  resetCachedAtlasImagesForTests()
   let created = 0
   let image: FakeImage | null = null
   const NativeImage = globalThis.Image
@@ -206,10 +210,12 @@ test('reuses a decoded atlas image when the live player remounts', async () => {
     assert.equal(reused, image)
   } finally {
     globalThis.Image = NativeImage
+    resetCachedAtlasImagesForTests()
   }
 })
 
 test('decoded atlas cache keeps only the latest image', async () => {
+  resetCachedAtlasImagesForTests()
   const images: FakeImage[] = []
   const NativeImage = globalThis.Image
   const TestImage = function () {
@@ -224,20 +230,21 @@ test('decoded atlas cache keeps only the latest image', async () => {
     image.onload?.(new Event('load'))
   }
   try {
-    const firstPending = loadImage('/atlas-latest-a.png')
+    const firstPending = loadImage('/atlas-a.png')
     finish(images[0])
     await firstPending
-    const secondPending = loadImage('/atlas-latest-b.png')
+    const secondPending = loadImage('/atlas-b.png')
     finish(images[1])
     await secondPending
     assert.equal(images[0].src, '')
-    const firstAgain = loadImage('/atlas-latest-a.png')
+    const firstAgain = loadImage('/atlas-a.png')
     finish(images[2])
     await firstAgain
     assert.equal(images.length, 3)
     assert.equal(images[1].src, '')
   } finally {
     globalThis.Image = NativeImage
+    resetCachedAtlasImagesForTests()
   }
 })
 
