@@ -125,3 +125,10 @@ test('`torsoBreath` gates the torso\'s lift and `hairWind` the hair\'s wind, eac
   assert.ok(liftAndWind({ torsoBreath: false, talking: true }).lift > 0.01)
   assert.ok(liftAndWind({ torsoBreath: false, singing: true }).lift > 0.01)
 })
+
+test('a figure that starts with `breathing` off starts still', () => {
+  const frames = breaths(4, () => false)
+  for (const key of ['head', 'body', 'breath'] as const)
+    assert.equal(spread(frames.map(f => f[key])), 0, `${key} holds still from the first frame`)
+  assert.equal(frames[0]!.body, 1)
+})

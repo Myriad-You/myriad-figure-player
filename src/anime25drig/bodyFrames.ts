@@ -128,8 +128,12 @@ export class Anime25DBodyFrames {
   }
 
   private shellActivation = 0
-  /** How much of the breath comes through: 1 while `breathing` is on, easing to 0 (mid-breath) while it is off. */
+  /**
+   * How much of the breath comes through: 1 while `breathing` is on, easing to 0 (mid-breath) while it is off. The
+   * first substep takes it as the driver has it, so a figure that starts with `breathing` off starts still.
+   */
   private breathWeight = 1
+  private breathStarted = false
   private hairSpringFrame!: Anime25DHairSpringFrame
 
   private readonly chest = createChestSpringState()
@@ -238,7 +242,11 @@ export class Anime25DBodyFrames {
   stepPosture(dt: number, time: number): void {
     this.shellActivation = Math.min(1, this.shellActivation + dt * 8)
     const breathWanted = this.current.breathing ? 1 : 0
-    if (this.breathWeight !== breathWanted) {
+    if (!this.breathStarted) {
+      this.breathStarted = true
+      this.breathWeight = breathWanted
+    }
+    else if (this.breathWeight !== breathWanted) {
       const eased = this.breathWeight + (breathWanted - this.breathWeight) * (1 - Math.exp(-BREATH_EASE_RATE * dt))
       this.breathWeight = Math.abs(eased - breathWanted) < BREATH_SETTLED ? breathWanted : eased
     }
