@@ -501,3 +501,8 @@ export function loadImage(
     image.src = url
   })
 }
+
+/** Test hook: forgets every decoded atlas image, so one test's images do not carry into the next. */
+export function resetCachedAtlasImagesForTests(): void {
+  cachedAtlasImages.clear()
+}
