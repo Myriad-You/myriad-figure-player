@@ -10,7 +10,7 @@ import { Anime25DStage } from './anime25drig/stage'
 
 /**
  * A figure on a canvas that lives on its own: the stage (Anime25DStage) moved by the basic driving
- * (Anime25DBasicDriving), which breathes, blinks and eases toward what set() asks.
+ * (Anime25DBasicDriving), which sways, blinks and eases toward what set() asks.
  *
  * The page drives the frames. Nothing is drawn until the atlas is in (loadAtlas or replaceLivePackage) and resize()
  * has given the canvas its size; then each animation frame the page calls tick() with the seconds since the last
@@ -43,7 +43,7 @@ export class FigurePlayer {
     return { ...this.driving.target }
   }
 
-  /** The pointer over the canvas, −1…1 across and down it; followed while the driver's `mouse` is on. */
+  /** The pointer over the canvas, −1…1 across and down it; followed while the driver's `followPointer` is on. */
   setPointer(x: number, y: number, inside: boolean): void {
     this.driving.setPointer(x, y, inside)
   }

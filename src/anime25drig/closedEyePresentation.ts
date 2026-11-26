@@ -2,7 +2,7 @@ import type { Anime25DDriver } from './driver'
 import type { Anime25DPlaybackLayer } from './types'
 
 /** Two authored drawings share the one closed-eye channel, never two blinks. */
-export class ClosedEyePresentation {
+export class Anime25DClosedEyePresentation {
   private available = [false, false]
   private selected = [false, false]
   private mix = [0, 0]

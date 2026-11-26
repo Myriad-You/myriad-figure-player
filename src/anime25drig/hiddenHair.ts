@@ -1,6 +1,6 @@
 import type { Anime25DPlaybackLayer } from './types'
 import type { CroppedLayerPixels } from './webglRuntime'
-import { insideDistance } from './pixelMasks'
+import { maskInsideDistance } from './pixelMasks'
 
 type Box = Pick<Anime25DPlaybackLayer, 'x' | 'y' | 'w' | 'h'>
 
@@ -61,7 +61,7 @@ export function shadeHiddenBackHair(
   shows.sort((left, right) => lightness(left) - lightness(right))
   const shadow = shows.slice(Math.floor(shows.length * SHADOW_FROM), Math.ceil(shows.length * SHADOW_TO))
   const inner = [0, 1, 2].map((channel) => shadow.reduce((sum, p) => sum + pixels[p * 4 + channel], 0) / shadow.length)
-  const distance = insideDistance(covered, width, height)
+  const distance = maskInsideDistance(covered, width, height)
   const feather = Math.max(1, FEATHER / pixelX)
   const out = new Uint8ClampedArray(pixels)
   for (let p = 0; p < width * height; p++) {

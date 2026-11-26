@@ -53,7 +53,7 @@ type SecondaryDeformationDriver = Pick<
   | 'bangR'
   | 'fhAmp'
   | 'fhSoft'
-  | 'phys'
+  | 'physics'
   | 'rearHairSway'
   | 'soft'
 >
@@ -623,7 +623,7 @@ export function deformAnime25DHairPoint(
     !springs?.length ||
     !strandWeights ||
     !alongStrand ||
-    !frame.expression.phys
+    !frame.expression.physics
   ) {
     return
   }

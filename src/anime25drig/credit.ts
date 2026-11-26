@@ -3,7 +3,8 @@ export const ANIME25D_PROJECT_NAME = 'Anime2.5DRig'
 export const ANIME25D_PROJECT_URL = 'https://github.com/852wa/Anime2.5DRig'
 export const ANIME25D_LICENSE = 'MIT'
 export const ANIME25D_COPYRIGHT = 'Copyright (c) 2026 hakoniwa'
-export const PERSONA_UPSTREAM_THANKS = [
+/** The authors a workbench credits for the work this package and its tools build on. */
+export const CREDITED_AUTHORS = [
   { handle: 'shitagaki-lab', url: 'https://github.com/shitagaki-lab' },
   { handle: '852wa', url: 'https://github.com/852wa' },
   { handle: 'izumix77', url: 'https://github.com/izumix77' },

@@ -71,16 +71,16 @@ export const ANIME25D_MOTION_ENVELOPE_PROBES = [
 export type Anime25DMotionEnvelopeProbeId =
   (typeof ANIME25D_MOTION_ENVELOPE_PROBES)[number]['id']
 
-interface MotionEnvelopePlayback {
+export interface Anime25DMotionEnvelopePlayback {
   layers: readonly Pick<Anime25DPlaybackLayer, 'role'>[]
   /** Keyed turns go to about 30°, others 11° (headTurnRadians). */
   turnKeyforms?: unknown
 }
-type MotionEnvelopeManifest = Pick<MeropeRigManifest, 'outfitProfile'>
+export type Anime25DMotionEnvelopeManifest = Pick<MeropeRigManifest, 'outfitProfile'>
 
 export function deriveAnime25DMotionEnvelopeProfile(
-  playback: Readonly<MotionEnvelopePlayback>,
-  manifest?: Readonly<MotionEnvelopeManifest>,
+  playback: Readonly<Anime25DMotionEnvelopePlayback>,
+  manifest?: Readonly<Anime25DMotionEnvelopeManifest>,
   hands: Readonly<Anime25DHandPose> = {},
 ): Anime25DMotionEnvelopeProfile {
   const highCollar = playback.layers.some(

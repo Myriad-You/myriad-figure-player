@@ -66,7 +66,7 @@ test('mouth stage preserves the frozen sequence outside ordinary expression curv
       jawDrop: Math.sin(progress * Math.PI) * 4.2,
       jawOpen: Math.sin(progress * Math.PI),
       time: progress * 5,
-      stylizedMotion:
+      stickerFaceMotion:
         frameIndex % 11 === 0
           ? null
           : {
@@ -122,7 +122,7 @@ test('ordinary mouth curvature is visible, symmetric and continuous across mater
         height: 20 * scale, openMix: opening, round: opening, wide: 0, narrow: 0,
         openCenterY: 170 * scale, openHeight: 20 * scale },
       expression: { ...IDENTITY_DRIVER, lipCurve: form },
-      jawDrop: 0, jawOpen: opening, time: 0, stylizedMotion: null,
+      jawDrop: 0, jawOpen: opening, time: 0, stickerFaceMotion: null,
     }, 'continuous')
     return point
   }
@@ -159,7 +159,7 @@ test('a tilted mouth keeps the face angle while it morphs to another size', () =
       mouth: MOUTH, face: FACE, faceAxes, faceScale: 1,
       // Morphing toward a narrower, taller material.
       morph: { centerX, centerY, width: 46, height: 36, openMix, wide: 0, round: 0, narrow: 0, openCenterY: centerY, openHeight: 36 },
-      expression: IDENTITY_DRIVER, jawDrop: 0, jawOpen: 0, time: 0, stylizedMotion: null,
+      expression: IDENTITY_DRIVER, jawDrop: 0, jawOpen: 0, time: 0, stickerFaceMotion: null,
     }
     // Two points on the drawn mouth's own horizontal axis.
     const ends = [-30, 30].map((along) => {
@@ -176,7 +176,7 @@ test('a tilted mouth keeps the face angle while it morphs to another size', () =
   const own: Anime25DMouthDeformationFrame = {
     mouth: MOUTH, face: FACE, faceAxes, faceScale: 1,
     morph: { centerX, centerY, width: source.w, height: source.h, openMix: 0, wide: 0, round: 0, narrow: 0, openCenterY: centerY, openHeight: source.h },
-    expression: IDENTITY_DRIVER, jawDrop: 0, jawOpen: 0, time: 0, stylizedMotion: null,
+    expression: IDENTITY_DRIVER, jawDrop: 0, jawOpen: 0, time: 0, stickerFaceMotion: null,
   }
   for (const [restX, restY] of [[source.x, source.y], [source.x + source.w, source.y + source.h], [centerX + 11, centerY - 7]]) {
     const point = { x: restX, y: restY }
@@ -321,13 +321,13 @@ function legacyDeformMouthPoint(
   }
   if (source.fade === 'mouthManiac') {
     point.y += e.mouthCY * 14 * frame.faceScale
-    if (frame.stylizedMotion) {
+    if (frame.stickerFaceMotion) {
       const localY = legacyClamp(
         (restY - source.y) / Math.max(1, source.h),
         0,
         1,
       )
-      const upperMouthPulse = frame.stylizedMotion.maniacUpperMouthPulse
+      const upperMouthPulse = frame.stickerFaceMotion.maniacUpperMouthPulse
       const tongueRootAnchor =
         mouthMorph.centerY - mouthMorph.height * 0.045
       const scaledX =
@@ -348,7 +348,7 @@ function legacyDeformMouthPoint(
       e.mouthCAng * 0.24,
     )
   }
-  if (source.fade === 'mouthSilly' && frame.stylizedMotion) {
+  if (source.fade === 'mouthSilly' && frame.stickerFaceMotion) {
     const localX = legacyClamp(
       (restX - (source.x + source.w / 2)) / Math.max(1, source.w / 2),
       -1,
@@ -359,7 +359,7 @@ function legacyDeformMouthPoint(
       -1,
       1,
     )
-    const opening = legacyClamp(frame.stylizedMotion.sillyMouthOpen, 0, 1)
+    const opening = legacyClamp(frame.stickerFaceMotion.sillyMouthOpen, 0, 1)
     const omegaLobe = Math.sin(Math.PI * Math.abs(localX))
     const omegaScale = Math.max(1, source.h)
     const closedX =

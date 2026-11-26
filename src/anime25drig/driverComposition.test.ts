@@ -3,10 +3,10 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { IDENTITY_DRIVER } from './driver'
 import {
-  applyAnime25DSillyMouthOwnership,
+  applyAnime25DStickerMouthShare,
   BLINK_SECONDS,
   prepareAnime25DWorkingTarget,
-  resolveAnime25DStylizedTargets,
+  resolveAnime25DStickerTargets,
   stepAnime25DBlink,
   stepAnime25DDriverResponse,
 } from './driverComposition'
@@ -27,8 +27,8 @@ test('working target preparation reuses its output and preserves the pointer mat
     gazeX: 0.1,
     gazeY: -0.2,
     bodyLean: 0.25,
-    mouse: true,
-    idle: true,
+    followPointer: true,
+    torsoBreath: true,
   }
   const output = { ...IDENTITY_DRIVER }
   const actual = prepareAnime25DWorkingTarget(
@@ -54,7 +54,7 @@ test('pointer gaze is a weight, so leaving eases off instead of dropping', () =>
     headPitch: 0.1,
     gazeX: 0.05,
     gazeY: -0.05,
-    mouse: true,
+    followPointer: true,
   }
   const pointer = { x: 0.46, y: -0.33, inside: true }
   const at = (authority: number) =>
@@ -71,7 +71,7 @@ test('pointer gaze is a weight, so leaving eases off instead of dropping', () =>
   assert.ok(Math.abs(half.gazeX - (authored.gazeX + held.gazeX) / 2) < 1e-12)
   const ignored = prepareAnime25DWorkingTarget(
     { ...IDENTITY_DRIVER },
-    { ...authored, mouse: false },
+    { ...authored, followPointer: false },
     pointer,
     1,
   )
@@ -149,14 +149,16 @@ test('new pose response leaves mouth, expression, blink and physics flags unchan
     target.lidR = (Math.cos(frame * 0.11) + 1) * 0.5
     target.irisScale = 0.9 + Math.sin(frame * 0.03) * 0.2
     target.mouthScale = 1 + Math.cos(frame * 0.05) * 0.25
-    authored.idle = frame % 2 === 0
-    authored.blink = frame % 3 !== 0
-    authored.rand = frame % 5 !== 0
+    authored.torsoBreath = frame % 2 === 0
+    authored.autoBlink = frame % 3 !== 0
+    authored.idleSway = frame % 5 !== 0
     authored.thinking = frame % 7 === 0
     authored.singing = frame % 11 === 0
-    authored.talk = frame % 13 !== 0
-    authored.mouse = frame % 17 === 0
-    authored.phys = frame % 19 !== 0
+    authored.talking = frame % 13 !== 0
+    authored.followPointer = frame % 17 === 0
+    authored.physics = frame % 19 !== 0
+    authored.breathing = frame % 29 !== 0
+    authored.hairWind = frame % 31 === 0
     secondaryTarget.headYaw = Math.sin(frame * 0.04)
     secondaryTarget.headPitch = Math.cos(frame * 0.05)
     secondaryTarget.headRoll = Math.sin(frame * 0.06 + 0.4)
@@ -199,14 +201,16 @@ function referenceStepDriverResponse(
 ): void {
   const rate = Math.min(1, dt * 14)
   const flags = [
-    'idle',
-    'blink',
-    'rand',
+    'breathing',
+    'torsoBreath',
+    'hairWind',
+    'physics',
+    'idleSway',
+    'autoBlink',
+    'followPointer',
     'thinking',
     'singing',
-    'talk',
-    'mouse',
-    'phys',
+    'talking',
   ] as const
   for (const key of Object.keys(IDENTITY_DRIVER) as Array<
     keyof Anime25DDriver
@@ -297,12 +301,12 @@ test('an interrupted blink finishes instead of springing open', () => {
 
 test('special eyes hold the sticker faces back', () => {
   const output = { anger: 0, speechless: 0, maniac: 0, silly: 0, lovestruck: 0 }
-  const resolved = resolveAnime25DStylizedTargets(output, { ...IDENTITY_DRIVER, maniac: 1, silly: 2 })
+  const resolved = resolveAnime25DStickerTargets(output, { ...IDENTITY_DRIVER, maniac: 1, silly: 2 })
   assert.equal(resolved, output)
   assert.deepEqual(resolved, { anger: 0, speechless: 0, maniac: 1, silly: 1, lovestruck: 0 })
-  resolveAnime25DStylizedTargets(output, { ...IDENTITY_DRIVER, maniac: 1, eyeCry: 0.75 })
+  resolveAnime25DStickerTargets(output, { ...IDENTITY_DRIVER, maniac: 1, eyeCry: 0.75 })
   assert.equal(output.maniac, 0.25)
-  resolveAnime25DStylizedTargets(output, { ...IDENTITY_DRIVER, maniac: 1, eyeDizzy: 1 })
+  resolveAnime25DStickerTargets(output, { ...IDENTITY_DRIVER, maniac: 1, eyeDizzy: 1 })
   assert.equal(output.maniac, 0)
 })
 
@@ -317,7 +321,7 @@ test('silly mouth ownership only attenuates owned speech channels', () => {
     lipCurve: -0.3,
     mouthCY: 0.25,
   }
-  applyAnime25DSillyMouthOwnership(target, 0.75)
+  applyAnime25DStickerMouthShare(target, 0.75)
   assert.deepEqual(
     {
       jaw: target.jaw,

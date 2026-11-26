@@ -1,3 +1,5 @@
+import type { Anime25DRgb } from './rgb'
+
 /**
  * Speaking mouths for a face whose painted mouth has lips: a painterly or
  * made-up mouth, not a cel line. The cel glyph (dark rim, flat fill) reads as
@@ -8,15 +10,9 @@
  * edges.
  */
 
-interface Rgb {
-  red: number
-  green: number
-  blue: number
-}
-
 export interface PaintedLips {
-  lips: Rgb
-  teeth: Rgb
+  lips: Anime25DRgb
+  teeth: Anime25DRgb
 }
 
 /** Below this share of lip-coloured pixels, or this height for its width, a mouth is a line. */
@@ -25,13 +21,13 @@ const MIN_MOUTH_ASPECT = 0.22
 
 /** The painted mouth's lips and teeth, or null for a cel line mouth. */
 /** A drawn mouth's pixels: RGBA, row by row. */
-export interface MouthPixels {
+export interface Anime25DMouthPixels {
   width: number
   height: number
   data: Uint8ClampedArray
 }
 
-export function detectPaintedLips(mouth: Readonly<MouthPixels>): PaintedLips | null {
+export function detectPaintedLips(mouth: Readonly<Anime25DMouthPixels>): PaintedLips | null {
   const { width, height, data } = mouth
   if (width < 8 || height < 4 || data.length !== width * height * 4) return null
   let visible = 0
@@ -39,8 +35,8 @@ export function detectPaintedLips(mouth: Readonly<MouthPixels>): PaintedLips | n
   let maxX = -1
   let minY = height
   let maxY = -1
-  const lips: Rgb[] = []
-  const teeth: Rgb[] = []
+  const lips: Anime25DRgb[] = []
+  const teeth: Anime25DRgb[] = []
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const index = (y * width + x) * 4
@@ -70,9 +66,9 @@ export function detectPaintedLips(mouth: Readonly<MouthPixels>): PaintedLips | n
 }
 
 /** The opening sits a little high: the lower lip is the fuller one. */
-export const LIP_CUT_OFFSET = -0.06
+export const LIP_PARTING_OFFSET = -0.06
 
-export interface LipCut {
+export interface Anime25DLipParting {
   openingX: number
   openingY: number
   lineX: number
@@ -86,7 +82,7 @@ export interface LipCut {
  * round drawings (the rest being open or wide, which part alike). A narrow
  * mouth is mostly lip with a thin slit; a round one shows less of its teeth.
  */
-export function lipCut(narrow: number, round: number): LipCut {
+export function lipParting(narrow: number, round: number): Anime25DLipParting {
   const n = Math.max(0, Math.min(1, narrow))
   const r = Math.max(0, Math.min(1 - n, round))
   return {
@@ -196,7 +192,7 @@ function localOpeningTop(shape: Readonly<LipMouthGeometry>, x: number, y: number
 }
 
 /** One pass of a small blur: painted edges are soft, never pixel-crisp. */
-export function soften(data: Uint8ClampedArray, width: number, height: number): Uint8ClampedArray {
+export function softenPaintedEdges(data: Uint8ClampedArray, width: number, height: number): Uint8ClampedArray {
   const output = new Uint8ClampedArray(data.length)
   const kernel = [1, 2, 1]
   for (let y = 0; y < height; y++) {
@@ -232,7 +228,7 @@ export function soften(data: Uint8ClampedArray, width: number, height: number): 
   return output
 }
 
-function paint(data: Uint8ClampedArray, offset: number, color: Readonly<Rgb>, alpha: number): void {
+function paint(data: Uint8ClampedArray, offset: number, color: Readonly<Anime25DRgb>, alpha: number): void {
   const source = Math.max(0, Math.min(1, alpha))
   const destination = data[offset + 3] / 255
   const out = source + destination * (1 - source)
@@ -244,7 +240,7 @@ function paint(data: Uint8ClampedArray, offset: number, color: Readonly<Rgb>, al
   data[offset + 3] = Math.round(out * 255)
 }
 
-function average(colors: readonly Rgb[]): Rgb {
+function average(colors: readonly Anime25DRgb[]): Anime25DRgb {
   let red = 0
   let green = 0
   let blue = 0
@@ -257,7 +253,7 @@ function average(colors: readonly Rgb[]): Rgb {
   return { red: Math.round(red / count), green: Math.round(green / count), blue: Math.round(blue / count) }
 }
 
-function mix(left: Readonly<Rgb>, right: Readonly<Rgb>, amount: number): Rgb {
+function mix(left: Readonly<Anime25DRgb>, right: Readonly<Anime25DRgb>, amount: number): Anime25DRgb {
   const t = Math.max(0, Math.min(1, amount))
   return {
     red: Math.round(left.red + (right.red - left.red) * t),
@@ -266,16 +262,16 @@ function mix(left: Readonly<Rgb>, right: Readonly<Rgb>, amount: number): Rgb {
   }
 }
 
-function shade(color: Readonly<Rgb>, amount: number): Rgb {
+function shade(color: Readonly<Anime25DRgb>, amount: number): Anime25DRgb {
   const kept = 1 - Math.max(0, Math.min(1, amount))
   return { red: Math.round(color.red * kept), green: Math.round(color.green * kept), blue: Math.round(color.blue * kept) }
 }
 
-function luminance(color: Readonly<Rgb>): number {
+function luminance(color: Readonly<Anime25DRgb>): number {
   return color.red * 0.299 + color.green * 0.587 + color.blue * 0.114
 }
 
-function colorSaturation(color: Readonly<Rgb>): number {
+function colorSaturation(color: Readonly<Anime25DRgb>): number {
   const max = Math.max(color.red, color.green, color.blue)
   const min = Math.min(color.red, color.green, color.blue)
   return max <= 0 ? 0 : (max - min) / max

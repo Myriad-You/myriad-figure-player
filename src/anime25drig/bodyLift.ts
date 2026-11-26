@@ -3,7 +3,7 @@
  * the lower transition absorbs extension without treating the crop as a joint.
  * This is a 2D shape correction, not a claim of reconstructed 3D anatomy.
  */
-export interface BodyLift {
+export interface Anime25DBodyLift {
   centerX: number
   upperY: number
   lowerY: number
@@ -14,7 +14,7 @@ export interface BodyLift {
   shoulderY?: number
 }
 
-export function applyBodyLift(point: { x: number; y: number }, field?: Readonly<BodyLift>): void {
+export function applyBodyLift(point: { x: number; y: number }, field?: Readonly<Anime25DBodyLift>): void {
   if (!field) return
   applyBodyPitch(point, field)
   if (field.amount) {
@@ -34,7 +34,7 @@ export function applyBodyLift(point: { x: number; y: number }, field?: Readonly<
  * physical hinge: depth and displacement release smoothly near that boundary.
  * No head flattening and no independent deformation of collars/accessories.
  */
-export function applyBodyPitch(point: { x: number; y: number }, field: Readonly<BodyLift>): void {
+export function applyBodyPitch(point: { x: number; y: number }, field: Readonly<Anime25DBodyLift>): void {
   if (!resolveBodyPitch(field, pitchScratch)) return
   const [top, stretch, offset] = pitchScratch
   const span = Math.max(1, field.lowerY - top)
@@ -56,14 +56,14 @@ const pitchScratch = new Float64Array(3)
  * headless Chromium's is off by about 1e-4, which would move the head 0.07 px away
  * from the CPU projection that picking and support sampling use.
  */
-export function bodyPitchUniform(field: Readonly<BodyLift> | undefined, out: Float32Array): Float32Array {
+export function bodyPitchUniform(field: Readonly<Anime25DBodyLift> | undefined, out: Float32Array): Float32Array {
   if (field) resolveBodyPitch(field, pitchScratch)
   else pitchScratch.fill(0)
   out.set(pitchScratch)
   return out
 }
 
-function resolveBodyPitch(field: Readonly<BodyLift>, out: Float64Array): boolean {
+function resolveBodyPitch(field: Readonly<Anime25DBodyLift>, out: Float64Array): boolean {
   const top = field.shoulderY ?? field.upperY
   out[0] = top; out[1] = 0; out[2] = 0
   const pitch = Math.max(-0.18, Math.min(0.18, field.pitch ?? 0))

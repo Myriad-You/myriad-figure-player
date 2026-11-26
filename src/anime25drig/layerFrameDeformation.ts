@@ -18,7 +18,7 @@ import { constrainHairSurface } from './hairSurface'
 import { jellyDisplacement } from './jellyVolume'
 import { keyedGazeShift } from './keyedGaze'
 import { carryWithCoiffure, deformNeckwearBridge, leanAnime25DAttachment, writeAnime25DAttachmentTransform } from './layerAttachment'
-import { deformAnime25DUpstreamFeaturePoint } from './layerDeformation'
+import { deformAnime25DEyeFeaturePoint } from './layerDeformation'
 import { writeAnime25DLayerGlobalTransform } from './layerTransform'
 import {
   deformAnime25DFaceJawPoint,
@@ -142,7 +142,7 @@ export function deformLayerVertices(
   const source = layer.source
   const bn = layer.baseRole
   const isHead = source.group === 'head'
-  const upstreamFeature = layer.upstreamFeature
+  const eyeFeatureInput = layer.eyeFeatureInput
   const cryLayer = source.fade === 'eyeCry'
   const tearVertical = cryLayer
     ? cryTearVerticalOffset(t, source.side, e.eyeCry, fs)
@@ -154,7 +154,7 @@ export function deformLayerVertices(
   if (layer.secondaryDeformation.poseCorrections) {
     writePoseCorrectionWeights(layer.secondaryDeformation.poseCorrections, e)
   }
-  const keyedGaze = upstreamFeature?.keyedGaze
+  const keyedGaze = eyeFeatureInput?.keyedGaze
   if (keyedGaze) {
     const turn = secondaryDeformationFrame.headTurn
     keyedGazeShift(keyedGaze, turn?.amount ?? 0, turn?.nodAmount ?? 0, e.gazeX, e.gazeY, fs)
@@ -166,12 +166,12 @@ export function deformLayerVertices(
     const previousY = deformed[index + 1]
     let x = rest[index]
     let y = rest[index + 1]
-    if (upstreamFeature) {
+    if (eyeFeatureInput) {
       deformationPoint.x = x
       deformationPoint.y = y
-      deformAnime25DUpstreamFeaturePoint(
+      deformAnime25DEyeFeaturePoint(
         deformationPoint,
-        upstreamFeature,
+        eyeFeatureInput,
         context.irisRebound,
       )
       x = deformationPoint.x
@@ -332,7 +332,7 @@ export function settleDependentLayers(
       // A pinned ornament takes its keys first; its chains then swing from that.
       if (layer.pinnedTurn) deformAttachmentTurn(layer.pinnedTurn.turn, secondaryDeformationFrame.headTurn?.amount ?? 0, secondaryDeformationFrame.headTurn?.nodAmount ?? 0, layer.rest, layer.pinnedTurn.keyed)
       if (layer.hangBend) hostCarry.set(layer.layerTransform)
-      layer.earwearPhysics?.apply(layer.attachment, layer.layerTransform, time, current.headYaw, current.headPitch, current.phys,
+      layer.earwearPhysics?.apply(layer.attachment, layer.layerTransform, time, current.headYaw, current.headPitch, current.physics,
         layer.attachmentTurn ? hostKeyRoll(layer.attachmentTurn, secondaryDeformationFrame.headTurn?.amount ?? 0, secondaryDeformationFrame.headTurn?.nodAmount ?? 0) : null,
         secondaryDeformationFrame.figure?.pitch?.headAhead)
       if (layer.hangBend && layer.deformed) {

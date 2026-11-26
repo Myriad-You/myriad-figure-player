@@ -7,7 +7,7 @@ import {
 } from './deformationDependencies'
 import { IDENTITY_DRIVER } from './driver'
 import { Anime25DIrisRebound } from './irisRebound'
-import { deformAnime25DUpstreamFeaturePoint } from './layerDeformation'
+import { deformAnime25DEyeFeaturePoint } from './layerDeformation'
 
 /** A blink: closed in 0.08 s, held, open again by 0.58 s. */
 function blink(t: number) {
@@ -72,8 +72,8 @@ test('only ordinary iris geometry rebounds and cache sees both activation and re
   ] as const) {
     const normal = { x: 15, y: 15 }
     const rebound = { ...normal }
-    deformAnime25DUpstreamFeaturePoint(normal, { ...base, kind })
-    deformAnime25DUpstreamFeaturePoint(
+    deformAnime25DEyeFeaturePoint(normal, { ...base, kind })
+    deformAnime25DEyeFeaturePoint(
       rebound,
       { ...base, kind },
       { x: 1.04, y: 0.98 },

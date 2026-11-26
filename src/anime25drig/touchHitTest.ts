@@ -10,7 +10,7 @@ export interface TouchMesh {
   layerTransform: Float32Array
 }
 
-export interface TouchMeshHit {
+export interface Anime25DTouchMeshHit {
   triangle: number
   u: number
   v: number
@@ -25,7 +25,7 @@ export function hitTestTouchMesh(
     Anime25DRenderFrame,
     'bodyPivotX' | 'bodyPivotY' | 'bodyRotationCosine' | 'bodyRotationSine'
   > & Partial<Pick<Anime25DRenderFrame, 'bodyBendHeight' | 'bodyLift'>>,
-): TouchMeshHit | null {
+): Anime25DTouchMeshHit | null {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null
   if (frame.bodyLift && (frame.bodyLift.amount || frame.bodyLift.pitch)) {
     // The GPU interpolates transformed triangle vertices, not the continuous

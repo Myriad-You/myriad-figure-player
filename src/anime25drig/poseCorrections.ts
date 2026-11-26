@@ -151,7 +151,7 @@ export function bindPoseCorrections(
   return result.length ? result : undefined
 }
 
-export type CorrectionDriver = Pick<
+export type PoseCorrectionDriver = Pick<
   Anime25DDriver,
   'headYaw' | 'headPitch' | 'lidL' | 'lidR' | 'jaw'
 >
@@ -161,12 +161,12 @@ const AXIS_DRIVER_FIELDS = {
   angleX: 'headYaw',
   angleY: 'headPitch',
   mouthOpen: 'jaw',
-} as const satisfies Record<Exclude<PoseCorrectionAxis, 'eyeCloseL' | 'eyeCloseR'>, keyof CorrectionDriver>
+} as const satisfies Record<Exclude<PoseCorrectionAxis, 'eyeCloseL' | 'eyeCloseR'>, keyof PoseCorrectionDriver>
 
 /** How much of a corner a pose holds: each axis eased in on its way to the corner. */
 export function poseCorrectionWeight(
   axes: ReadonlyArray<readonly [PoseCorrectionAxis, number]>,
-  driver: Readonly<CorrectionDriver>,
+  driver: Readonly<PoseCorrectionDriver>,
 ): number {
   let weight = 1
   for (const [axis, target] of axes) {
@@ -184,7 +184,7 @@ export function poseCorrectionWeight(
 
 export function writePoseCorrectionWeights(
   bindings: BoundPoseCorrection[],
-  driver: Readonly<CorrectionDriver>,
+  driver: Readonly<PoseCorrectionDriver>,
 ): void {
   for (const binding of bindings) binding.weight = poseCorrectionWeight(binding.axes, driver)
 }

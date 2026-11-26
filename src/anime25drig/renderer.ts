@@ -1,4 +1,4 @@
-import type { BodyLift } from './bodyLift'
+import type { Anime25DBodyLift } from './bodyLift'
 import type { CollarClipMesh } from './collarRuntime'
 import type { NeckSurfaceContour } from './neckSurfaceContour'
 import type { Anime25DFrameWork } from './performanceTelemetry'
@@ -101,7 +101,7 @@ export interface Anime25DRenderFrame {
   bodyRotationSine: number
   /** Height above the pivot over which the torso bends into the lean; 0 is rigid. */
   bodyBendHeight: number
-  bodyLift?: Readonly<BodyLift>
+  bodyLift?: Readonly<Anime25DBodyLift>
   time: number
   eyeCry: number
 }

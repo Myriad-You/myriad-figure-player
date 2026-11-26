@@ -1,6 +1,6 @@
 import type { Anime25DDriver } from './driver'
 import type { MouthMorphState } from './mouthRuntime'
-import type { StylizedExpressionMotion } from './stylizedExpressionMotion'
+import type { Anime25DStickerFaceMotion } from './stickerFaceMotion'
 import type {
   Anime25DEyeAnchor,
   Anime25DPlaybackLayer,
@@ -15,7 +15,7 @@ type ExpressionGeometryDriver = Pick<
 >
 
 type ExpressionGeometryMotion = Pick<
-  StylizedExpressionMotion,
+  Anime25DStickerFaceMotion,
   | 'angerMarkOffsetY'
   | 'angerMarkRotation'
   | 'angerMarkScale'
@@ -52,7 +52,7 @@ export interface Anime25DExpressionDeformationFrame {
   faceAxes: Readonly<{ cos: number; sin: number }>
   faceScale: number
   mouthMorph: Readonly<MouthMorphState>
-  stylizedMotion: Readonly<ExpressionGeometryMotion> | null
+  stickerFaceMotion: Readonly<ExpressionGeometryMotion> | null
 }
 
 export interface Anime25DExpressionDeformationBinding {
@@ -149,7 +149,7 @@ export function deformAnime25DExpressionPoint(
     point.y += tearVertical * flowWeight
     return
   }
-  const motion = frame.stylizedMotion
+  const motion = frame.stickerFaceMotion
   if (!motion) return
   if (kind === 'silly-eye') {
     const scale = 0.84 + motion.sillyEyeScale * 0.16

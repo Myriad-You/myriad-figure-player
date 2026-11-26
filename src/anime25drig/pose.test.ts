@@ -9,7 +9,7 @@ function poseOf(at: number, gesture = 'wave'): Anime25DPose {
     version: 1,
     figure: '2-abc',
     time: at,
-    driver: { ...IDENTITY_DRIVER, headYaw: at, talk: at > 0.5 },
+    driver: { ...IDENTITY_DRIVER, headYaw: at, talking: at > 0.5 },
     frame: { viewWidth: 10, viewHeight: 20, bodyPivotX: at, bodyPivotY: 0, bodyRotationCosine: 1, bodyRotationSine: 0, bodyBendHeight: 0, time: at, eyeCry: 0 },
     order: Uint16Array.of(at > 0.5 ? 1 : 0, at > 0.5 ? 0 : 1),
     layers: [
@@ -39,7 +39,7 @@ test('a pose is itself again from JSON, to the bit', () => {
   assert.deepEqual(poseFromJSON(poseToJSON(pose)), pose)
   // The driver keeps the keys poses are written with.
   const { driver } = JSON.parse(poseToJSON(pose)) as { driver: Record<string, unknown> }
-  assert.deepEqual(Object.keys(driver), Object.keys(pose.driver).map(key => ({ headYaw: 'angleX', headPitch: 'angleY', headRoll: 'angleZ', lidL: 'eyeOpenL', lidR: 'eyeOpenR', gazeX: 'eyeX', gazeY: 'eyeY', jaw: 'mouthOpen', lipCurve: 'mouthForm', browLift: 'brow', browTiltL: 'browAngL', browTiltR: 'browAngR', browTilt: 'browAngSym', bodyLean: 'body', torsoFollow: 'bodyYaw', rearHairSway: 'physAmp' } as Record<string, string>)[key] ?? key))
+  assert.deepEqual(Object.keys(driver), Object.keys(pose.driver).map(key => ({ headYaw: 'angleX', headPitch: 'angleY', headRoll: 'angleZ', lidL: 'eyeOpenL', lidR: 'eyeOpenR', gazeX: 'eyeX', gazeY: 'eyeY', jaw: 'mouthOpen', lipCurve: 'mouthForm', browLift: 'brow', browTiltL: 'browAngL', browTiltR: 'browAngR', browTilt: 'browAngSym', bodyLean: 'body', torsoFollow: 'bodyYaw', rearHairSway: 'physAmp', torsoBreath: 'idle', physics: 'phys', idleSway: 'rand', autoBlink: 'blink', followPointer: 'mouse', talking: 'talk' } as Record<string, string>)[key] ?? key))
   assert.equal(driver.angleX, 0.7)
 })
 
@@ -59,7 +59,7 @@ test('between two poses, numbers are between and what cannot be is the nearer on
   assert.equal(near.layers[0]!.vertices![0], Math.fround(Math.fround(0.1) + (Math.fround(1.1) - Math.fround(0.1)) * 0.25))
   assert.deepEqual(near.order, a.order)
   assert.equal(near.sticker, null)
-  assert.equal(near.driver.talk, false)
+  assert.equal(near.driver.talking, false)
   const now = near.arms[0]!.now!
   assert.deepEqual(now.joints.w, [2, 0, 0.25])
   assert.deepEqual(now.sides, [-Infinity, 5.25])
@@ -92,4 +92,23 @@ test('at either end it is the pose itself, and neither is changed', () => {
   assert.deepEqual([a, b], [poseOf(0), poseOf(1)])
   assert.equal(blendPoses(a, b, 0), a)
   assert.equal(blendPoses(a, b, 1), b)
+})
+
+test('a pose written before the breath and the wind had switches of their own reads back whole', () => {
+  // Written by the release before `breathing` and `hairWind`: `idle` held the wind as well.
+  const text = '{"version":1,"figure":"2-abc","time":0.25,"driver":{"angleX":0.25,"angleY":0,"angleZ":0,"eyeOpenL":1,"eyeOpenR":1,"eyeDizzy":0,"eyeSqueeze":0,"eyeCry":0,"anger":0,"speechless":0,"accentNotes":0,"accentQuestion":0,"accentSleep":0,"accentSparkle":0,"accentBlush":0,"handWaveL":0,"handPointL":0,"handChestL":0,"handChinL":0,"handWaveR":0,"handPointR":0,"handChestR":0,"handChinR":0,"maniac":0,"silly":0,"lovestruck":0,"eyeX":0,"eyeY":0,"brow":0,"mouthOpen":0,"mouthWide":0,"mouthRound":0,"mouthNarrow":0,"mouthSeal":0,"mouthForm":0,"mouthCY":0,"body":0,"bodyYaw":1,"torsoTurn":0,"bodyLift":0,"bodyPitch":0,"physAmp":0.5,"soft":2,"browAngL":0,"browAngR":0,"browAngSym":0,"bangL":0,"bangC":0,"bangR":0,"armY":0,"armPos":0,"armRaiseL":0,"armRaiseR":0,"armSwingL":0,"armSwingR":0,"bust":2.5,"bustY":1,"irisScale":1,"eyeSmile":0,"eyeWide":0,"mouthEase":0.45,"eyeEase":0.3,"fhAmp":1,"fhSoft":0.4,"eyeCY":0,"eyeCAng":0,"mouthCAng":0,"eyeScaleL":1,"eyeScaleR":1,"mouthScale":1,"idle":false,"blink":true,"rand":false,"thinking":false,"singing":false,"talk":false,"mouse":true,"phys":false},"frame":{"viewWidth":10,"viewHeight":20,"bodyPivotX":0.25,"bodyPivotY":0,"bodyRotationCosine":1,"bodyRotationSine":0,"bodyBendHeight":0,"time":0.25,"eyeCry":0},"order":{"u16":"AAABAA=="},"layers":[{"transform":{"f32":"AACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAACAPgAAAAAAAIA/"},"opacity":1,"multiply":null,"behindFace":0,"vertices":{"f32":"AAAAP6uqqj4="}}],"collar":null,"mouth":null,"sticker":null,"arms":[]}'
+  const pose = poseFromJSON(text)
+  assert.deepEqual(pose.driver, {
+    ...IDENTITY_DRIVER,
+    headYaw: 0.25,
+    torsoBreath: false,
+    hairWind: false,
+    breathing: true,
+    idleSway: false,
+    physics: false,
+    talking: false,
+    followPointer: true,
+  })
+  assert.deepEqual(Object.keys(pose.driver).sort(), Object.keys(IDENTITY_DRIVER).sort())
+  assert.deepEqual(pose.layers[0]!.vertices, Float32Array.of(0.5, 1 / 3))
 })

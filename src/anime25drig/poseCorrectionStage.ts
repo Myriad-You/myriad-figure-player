@@ -1,4 +1,4 @@
-import type { CorrectionDriver, PoseCorrection, PoseCorrectionAxis } from './poseCorrections'
+import type { PoseCorrection, PoseCorrectionAxis, PoseCorrectionDriver } from './poseCorrections'
 import type { Anime25DRenderFrame } from './renderer'
 import type { Anime25DSecondaryDeformationBinding } from './secondaryDeformation'
 import type { Anime25DShellEllipsoid } from './types'
@@ -153,7 +153,7 @@ export function projectPoseCorrectionPatch(
   layers: readonly PoseCorrectionStageLayer[],
   frame: StageFrame,
   head: Readonly<Anime25DShellEllipsoid>,
-  driver: Readonly<CorrectionDriver>,
+  driver: Readonly<PoseCorrectionDriver>,
   gain = 1,
 ): { origin: { x: number; y: number }; pushed: { x: number; y: number }; weight: number; unitX: number; unitY: number } | null {
   const layer = surfaceLayer(layers, correction.surface)
@@ -255,7 +255,7 @@ export interface PoseCorrectionStageSource {
   /** The share of a correction's push the shell blend lets through. */
   gain: number
   /** The pose corrections are weighed against this frame. */
-  driver: Readonly<CorrectionDriver>
+  driver: Readonly<PoseCorrectionDriver>
 }
 
 /** The layers corrections bind to, as `previewPoseCorrections` binds them. */

@@ -267,7 +267,7 @@ export function writeAnime25DOpacityFrame(
   output: Anime25DOpacityFrame,
   driver: Readonly<Anime25DDriver>,
   activeMouthMaterial: SpeechMouthMaterial,
-  sillyMouthShare = 1,
+  stickerMouthShare = 1,
   handoff?: Readonly<{ previous: SpeechMouthMaterial, handoff: number }>,
   continuousMouth = false,
 ): void {
@@ -290,7 +290,7 @@ export function writeAnime25DOpacityFrame(
     (1 - squeeze) *
     (1 - maniac) *
     (1 - silly)
-  const sillyMouth = silly * clamp(sillyMouthShare, 0, 1)
+  const sillyMouth = silly * clamp(stickerMouthShare, 0, 1)
   const symbolBlocker =
     (1 - dizzy) * (1 - squeeze) * (1 - cry) * (1 - silly) * (1 - lovestruck)
   const eyeOpenL = openEyeShare(driver.lidL, driver.eyeEase)

@@ -60,6 +60,10 @@ import { deformAnime25DSecondaryPoint, shellTurnBlend } from './secondaryDeforma
 import { writeAnime25DShellRotation } from './shellDeformation'
 import { anime25DTorsoNeckOffsetX, anime25DTorsoYawFollow, FIGURE_BODY_YAW, stepAnime25DTorsoShellRotation } from './torsoDeformation'
 
+/** How fast the breath eases out and back in when `breathing` is switched (per second), and where it counts as there. */
+const BREATH_EASE_RATE = 3
+const BREATH_SETTLED = 1e-4
+
 /**
  * The figure's body between the composed driver and the drawn layers: head, torso and
  * shell pose, breath, the chest spring, the jaw, hanging arms, soft volumes
@@ -124,6 +128,12 @@ export class Anime25DBodyFrames {
   }
 
   private shellActivation = 0
+  /**
+   * How much of the breath comes through: 1 while `breathing` is on, easing to 0 (mid-breath) while it is off. The
+   * first substep takes it as the driver has it, so a figure that starts with `breathing` off starts still.
+   */
+  private breathWeight = 1
+  private breathStarted = false
   private hairSpringFrame!: Anime25DHairSpringFrame
 
   private readonly chest = createChestSpringState()
@@ -218,6 +228,11 @@ export class Anime25DBodyFrames {
     return this.headJelly.stretch
   }
 
+  /** The breath's swing about mid-breath at `time`, as much of it as `breathing` lets through. */
+  private breathResidual(time: number): number {
+    return chestBreathResidual(time) * this.breathWeight
+  }
+
   /** A hanging sleeve's soft volume. */
   jellyFor(layer: Anime25DGpuLayer): LayerJelly | undefined {
     return this.jellyParts.get(layer)
@@ -226,6 +241,15 @@ export class Anime25DBodyFrames {
   /** Posture after the driver moved: torso yaw, the shell coming in, lift and pitch. */
   stepPosture(dt: number, time: number): void {
     this.shellActivation = Math.min(1, this.shellActivation + dt * 8)
+    const breathWanted = this.current.breathing ? 1 : 0
+    if (!this.breathStarted) {
+      this.breathStarted = true
+      this.breathWeight = breathWanted
+    }
+    else if (this.breathWeight !== breathWanted) {
+      const eased = this.breathWeight + (breathWanted - this.breathWeight) * (1 - Math.exp(-BREATH_EASE_RATE * dt))
+      this.breathWeight = Math.abs(eased - breathWanted) < BREATH_SETTLED ? breathWanted : eased
+    }
     stepAnime25DTorsoShellRotation(
       this.torsoYaw,
       // The head's own turn: what it took from the directed torso turn is not followed back.
@@ -238,11 +262,11 @@ export class Anime25DBodyFrames {
       this.driving.directedBodyWeight('torsoTurn'),
       this.figure ? FIGURE_BODY_YAW : undefined,
     )
-    // Explicit posture can be directed independently. A nod, the arms and the breath (idle, talking, singing)
-    // also recruit the upper body, without adding an unrelated periodic oscillator.
+    // Explicit posture can be directed independently. A nod, the arms and the breath (torsoBreath, talking,
+    // singing) also recruit the upper body, without adding an unrelated periodic oscillator.
     this.bodyLiftResponse.step(Math.max(-1, Math.min(1,
       this.current.headPitch * 0.45 + this.current.armY * 0.2 +
-      (this.current.idle || this.current.talk || this.current.singing ? chestBreathResidual(time) * 0.7 : 0),
+      (this.current.torsoBreath || this.current.talking || this.current.singing ? this.breathResidual(time) * 0.7 : 0),
     )), dt)
     this.bodyPitchResponse.step(Math.max(-1, Math.min(1,
       this.current.headPitch * 0.35,
@@ -257,12 +281,12 @@ export class Anime25DBodyFrames {
     const anchors = this.anchors
     const faceScale = anchors.faceScale
     const e = this.current
-    stepJawMotion(this.jaw, jawMotionTarget(e, this.driving.jawEmphasis), dt)
+    stepJawMotion(this.jaw, jawMotionTarget(e, this.driving.jawBoost), dt)
     const chestProfile = this.chestProfile
     if (chestProfile.enabled) {
       const chestTarget = chestMotionTarget(e, faceScale, this.chestTarget)
       chestTarget.y += chestBreathTargetY(
-        chestBreathResidual(time),
+        this.breathResidual(time),
         faceScale,
         this.chestDynamics.breathMotionScale,
       )
@@ -285,11 +309,11 @@ export class Anime25DBodyFrames {
       )
     }
     const hairSpringFrame = this.hairSpringFrame
-    hairSpringFrame.enabled = e.phys
-    hairSpringFrame.idle = e.idle
+    hairSpringFrame.enabled = e.physics
+    hairSpringFrame.wind = e.hairWind
     hairSpringFrame.frontSoft = e.fhSoft
     hairSpringFrame.rearSoft = e.soft
-    if (e.phys) {
+    if (e.physics) {
       this.prepareHeadFrame(time)
       for (const layer of layers) {
         const roots = layer.hairRoots
@@ -304,9 +328,9 @@ export class Anime25DBodyFrames {
     hairSpringFrame.tilt = this.headTilt()
     stepAnime25DHairLayerSprings(layers, hairSpringFrame, dt)
     this.stepArms(dt, layers, time)
-    this.figure?.stepParts(dt, e.bodyLean, e.phys)
+    this.figure?.stepParts(dt, e.bodyLean, e.physics)
     this.stepJelly(dt)
-    if (this.standing) this.secondaryDeformationFrame.standing = this.standing.step(dt, this.current.bodyLean, this.current.phys, this.figure?.pitch?.hipsAcross, this.figure?.pitch?.hipsDown)
+    if (this.standing) this.secondaryDeformationFrame.standing = this.standing.step(dt, this.current.bodyLean, this.current.physics, this.figure?.pitch?.hipsAcross, this.figure?.pitch?.hipsDown)
   }
 
   /** Shared primary pose for physics substeps and the final visible mesh. */
@@ -314,8 +338,8 @@ export class Anime25DBodyFrames {
     const e = this.current
     const frame = this.secondaryDeformationFrame
     const anchors = this.anchors
-    const breath = 0.5 + chestBreathResidual(time)
-    const breathHead = 0.5 + 0.5 * Math.sin((time * Math.PI * 2) / 3.4 - 0.6)
+    const breath = 0.5 + this.breathResidual(time)
+    const breathHead = 0.5 + 0.5 * Math.sin((time * Math.PI * 2) / 3.4 - 0.6) * this.breathWeight
     const faceHeight = anchors.face.y1 - anchors.face.y0
     const span = Math.max(1, anchors.bodyPivot.y - anchors.neckBottom)
     const recruited = this.bodyPitchResponse.value * (1 - this.driving.directedBodyWeight('torsoPitch'))
@@ -338,10 +362,10 @@ export class Anime25DBodyFrames {
     frame.headRotationSine = Math.sin(frame.headRollAngle)
     frame.bodyBreathOffset = breath * 2
     frame.headBreathOffset = breathHead * 1.6
-    frame.specialHeadOffset = this.driving.stylizedMotion
-      ? (this.driving.stylizedMotion.maniacHeadPulse * 80 +
-          this.driving.stylizedMotion.sillyHeadPulse * 8 +
-          this.driving.stylizedMotion.lovestruckHeadPulse * 5) * this.driving.stylizedHeadShare * anchors.faceScale
+    frame.specialHeadOffset = this.driving.stickerFaceMotion
+      ? (this.driving.stickerFaceMotion.maniacHeadPulse * 80 +
+          this.driving.stickerFaceMotion.sillyHeadPulse * 8 +
+          this.driving.stickerFaceMotion.lovestruckHeadPulse * 5) * this.driving.stickerFaceHeadShare * anchors.faceScale
       : 0
     frame.breath = breath
     frame.shellBlend = this.shellProfile.blend * this.shellActivation
@@ -370,7 +394,7 @@ export class Anime25DBodyFrames {
   prepareChestFrame(time: number): void {
     const e = this.current
     const fs = this.anchors.faceScale
-    const breathResidual = chestBreathResidual(time)
+    const breathResidual = this.breathResidual(time)
     const chestCy = this.chestRegion.centerY
     const chestRx = this.chestRegion.radiusX
     const chestRy = this.chestRegion.radiusY
@@ -397,7 +421,7 @@ export class Anime25DBodyFrames {
     secondaryDeformationFrame.inverseChestRadiusY = inverseChestRy
     secondaryDeformationFrame.chestOffsetX = chestOffsetX
     secondaryDeformationFrame.chestOffsetY = chestOffsetY
-    secondaryDeformationFrame.chestStretch = e.phys
+    secondaryDeformationFrame.chestStretch = e.physics
       ? chestVolumeStretch(this.chest.offsetY * chestMotionMix * this.chestDynamics.inertiaGain, chestRy) *
         this.chestDynamics.volumeScale
       : 0
@@ -420,7 +444,7 @@ export class Anime25DBodyFrames {
   private stepJelly(dt: number): void {
     const element = this.headJellyElement
     if (!element) return
-    const dynamic = this.current.phys
+    const dynamic = this.current.physics
     this.writeHeadWorldTransform(this.headWorldTransform)
     // Directions in the drawing turn with the head and body roll.
     const roll = this.headTilt()
@@ -470,7 +494,7 @@ export class Anime25DBodyFrames {
   private stepArms(dt: number, layers: readonly Anime25DGpuLayer[], time: number): void {
     const e = this.current
     const frame = this.secondaryDeformationFrame
-    if (!e.phys) this.prepareHeadFrame(time)
+    if (!e.physics) this.prepareHeadFrame(time)
     // Which way is down for an arm: the chest it hangs from.
     const bodyRoll = this.figure ? this.figure.pose.chestAngle : e.bodyLean * BODY_ROLL_RADIANS
     const swing = this.figure ? FIGURE_ARM_SWING : BUST_ARM_SWING
@@ -486,7 +510,7 @@ export class Anime25DBodyFrames {
         open: e.armY,
         sway: e.armPos,
         headTurn: e.headYaw,
-        dynamic: e.phys,
+        dynamic: e.physics,
       },
       this.armElbows,
       dt,
@@ -504,7 +528,7 @@ export class Anime25DBodyFrames {
       // A standing figure's arms hang and go as the body carries them (HANGING_ARM).
       const intent = this.figure ? HANGING_ARM
         : resolveDirectedArmIntent(own, e.armPos, raised, swung, raiseShare, swingShare, this.armElbows[side])
-      const input = { ...swing, open: intent.open, sway: intent.sway, bodyRoll, dynamic: e.phys }
+      const input = { ...swing, open: intent.open, sway: intent.sway, bodyRoll, dynamic: e.physics }
       const angle = this.armPendulums[side].step(input, joint, dt)
       const drape = this.armDrapes[side].step(angle, input.bodyRoll, input.dynamic, dt)
       // Away from the body is the arm's own outward turn.

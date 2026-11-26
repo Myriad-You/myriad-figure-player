@@ -2,7 +2,7 @@ import type { Anime25DArmVariants, DrawnArms } from './armVariantPresenter'
 import type { CollarClipMesh } from './collarRuntime'
 import type { Anime25DFrameWork } from './performanceTelemetry'
 import type { Anime25DRenderableLayer, Anime25DRendererBindings, Anime25DRenderFrame } from './renderer'
-import type { ThinkingSticker, ThinkingStickerFrame } from './thinkingSticker'
+import type { Anime25DSpinnerFrame, SpinnerSticker } from './spinnerSticker'
 import { drawAnime25DFrame, redrawAnime25DLayers } from './renderer'
 
 /** All that drawing one frame takes: the live figure's, or a pose's. */
@@ -12,7 +12,7 @@ export interface DrawnFrame {
   collarClip: CollarClipMesh | null
   renderFrame: Anime25DRenderFrame
   arms: readonly DrawnArms[]
-  sticker: ThinkingStickerFrame | null
+  sticker: Anime25DSpinnerFrame | null
 }
 
 /** What a figure draws with. */
@@ -21,7 +21,7 @@ export interface DrawingParts {
   program: WebGLProgram
   bindings: Anime25DRendererBindings
   armVariants: Anime25DArmVariants
-  sticker: ThinkingSticker
+  sticker: SpinnerSticker
 }
 
 /** Draws one frame; nothing of the figure moves. Its vertices are on the GPU by now. */

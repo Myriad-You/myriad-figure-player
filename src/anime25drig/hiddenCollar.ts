@@ -1,6 +1,6 @@
 import type { Anime25DPlaybackLayer } from './types'
 import type { CroppedLayerPixels } from './webglRuntime'
-import { dilate, erode, insideDistance } from './pixelMasks'
+import { dilate, erode, maskInsideDistance } from './pixelMasks'
 
 type Box = Pick<Anime25DPlaybackLayer, 'x' | 'y' | 'w' | 'h'>
 
@@ -141,7 +141,7 @@ export function plainHiddenCollars(
     const { width, height, pixels } = image
     const pixelX = layer.w / width
     const pixelY = layer.h / height
-    const distance = insideDistance(hidden, width, height)
+    const distance = maskInsideDistance(hidden, width, height)
     const feather = Math.max(1, FEATHER / pixelX)
     const next = new Uint8ClampedArray(pixels)
     // A hole in the garment (not a backing) takes the garment that shows beside it.

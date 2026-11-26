@@ -1,8 +1,8 @@
 import type { Anime25DArmSide } from './armVariantPresenter'
-import type { ContinuousMouthShape } from './continuousMouth'
+import type { Anime25DContinuousMouthShape } from './continuousMouth'
 import type { Anime25DDriver } from './driver'
 import type { Anime25DRenderFrame } from './renderer'
-import type { ThinkingStickerFrame } from './thinkingSticker'
+import type { Anime25DSpinnerFrame } from './spinnerSticker'
 import { HIDDEN_OPACITY } from './mouthRuntime'
 
 // One drawn frame of the figure as plain data: everything its drawing reads that changes from frame to frame, taken
@@ -69,8 +69,8 @@ export interface Anime25DPose {
   order: Uint16Array
   layers: Anime25DLayerPose[]
   collar: Float32Array | null
-  mouth: ContinuousMouthShape | null
-  sticker: ThinkingStickerFrame | null
+  mouth: Anime25DContinuousMouthShape | null
+  sticker: Anime25DSpinnerFrame | null
   arms: Anime25DArmPose[]
 }
 
@@ -95,11 +95,27 @@ const DRIVER_JSON_KEYS = {
   bodyLean: 'body',
   torsoFollow: 'bodyYaw',
   rearHairSway: 'physAmp',
+  torsoBreath: 'idle',
+  physics: 'phys',
+  idleSway: 'rand',
+  autoBlink: 'blink',
+  followPointer: 'mouse',
+  talking: 'talk',
 } as const satisfies Partial<Record<keyof Anime25DDriver, string>>
 
 const DRIVER_FIELDS_BY_JSON_KEY: Readonly<Record<string, string>> = Object.fromEntries(
   Object.entries(DRIVER_JSON_KEYS).map(([field, key]) => [key, field]),
 )
+
+/**
+ * A driver as poses wrote it before `hairWind` and `breathing` were switches of their own: its `idle` (read as
+ * `torsoBreath`) switched the hair's wind as well, and the stage always breathed.
+ */
+function completeDriver(driver: Record<string, unknown>): Record<string, unknown> {
+  if (!Object.hasOwn(driver, 'hairWind') && typeof driver.torsoBreath === 'boolean') driver.hairWind = driver.torsoBreath
+  if (!Object.hasOwn(driver, 'breathing')) driver.breathing = true
+  return driver
+}
 
 /** The driver with its keys renamed, in the order it has them. */
 function renameKeys(driver: object, names: Readonly<Record<string, string>>): Record<string, unknown> {
@@ -131,7 +147,7 @@ export function poseFromJSON(text: string): Anime25DPose {
     return value
   }) as Anime25DPose | null
   const driver: unknown = pose?.driver
-  if (typeof driver === 'object' && driver !== null) pose!.driver = renameKeys(driver, DRIVER_FIELDS_BY_JSON_KEY) as unknown as Anime25DDriver
+  if (typeof driver === 'object' && driver !== null) pose!.driver = completeDriver(renameKeys(driver, DRIVER_FIELDS_BY_JSON_KEY)) as unknown as Anime25DDriver
   return pose as Anime25DPose
 }
 

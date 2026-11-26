@@ -1,6 +1,6 @@
 import type { PaintedLips } from '../expressionShapes/lipMouth'
 import type { MouthExpressionPalette } from '../expressionShapes/mouthExpression'
-import { LIP_CUT_OFFSET, lipCut, paintLipMouth, soften } from '../expressionShapes/lipMouth'
+import { LIP_PARTING_OFFSET, lipParting, paintLipMouth, softenPaintedEdges } from '../expressionShapes/lipMouth'
 import { mouthExpressionOuterPath } from '../expressionShapes/mouthExpression'
 
 /**
@@ -17,7 +17,7 @@ import { mouthExpressionOuterPath } from '../expressionShapes/mouthExpression'
  * runtime's warp of that place to the mouth's box applies unchanged.
  */
 
-export interface ContinuousMouthShape {
+export interface Anime25DContinuousMouthShape {
   wide: number
   round: number
   /** A consonant's narrow mouth: the open outline, flatter, with the lips nearly shut. */
@@ -90,7 +90,7 @@ const shapePoint = { x: 0, y: 0 }
  * one is stored.
  */
 export function paintContinuousMouth(
-  shape: Readonly<ContinuousMouthShape>,
+  shape: Readonly<Anime25DContinuousMouthShape>,
   palette: Readonly<MouthExpressionPalette>,
   width: number,
   height: number,
@@ -129,7 +129,7 @@ export function paintContinuousMouth(
  * cavity and tongue, as the drawn lip mouths are, softened the same way.
  */
 export function paintContinuousLipMouth(
-  shape: Readonly<ContinuousMouthShape>,
+  shape: Readonly<Anime25DContinuousMouthShape>,
   painted: Readonly<PaintedLips>,
   width: number,
   height: number,
@@ -140,7 +140,7 @@ export function paintContinuousLipMouth(
   blendOutline(shape)
   // One pixel of room on each side for the softening, as the drawn ones have.
   place(width, height, roll, 1)
-  const cut = lipCut(clamp01(shape.narrow), clamp01(shape.round))
+  const cut = lipParting(clamp01(shape.narrow), clamp01(shape.round))
   let top = Infinity
   let bottom = -Infinity
   for (let index = 0; index < ANGLES; index++) {
@@ -148,10 +148,10 @@ export function paintContinuousLipMouth(
     top = Math.min(top, y)
     bottom = Math.max(bottom, y)
   }
-  const openingTop = LIP_CUT_OFFSET + top * cut.openingY
-  const openingBottom = LIP_CUT_OFFSET + bottom * cut.openingY
+  const openingTop = LIP_PARTING_OFFSET + top * cut.openingY
+  const openingBottom = LIP_PARTING_OFFSET + bottom * cut.openingY
   const scaled = (scaleX: number, scaleY: number) => (x: number, y: number) =>
-    inside(x / scaleX, (y - LIP_CUT_OFFSET) / scaleY)
+    inside(x / scaleX, (y - LIP_PARTING_OFFSET) / scaleY)
   paintLipMouth(out, width, height, painted, {
     toShape,
     openingRows: (openingBottom - openingTop) / placement.unitY,
@@ -162,11 +162,11 @@ export function paintContinuousLipMouth(
     inLipLine: scaled(cut.lineX, cut.lineY),
     inOpening: scaled(cut.openingX, cut.openingY),
   })
-  out.set(soften(out, width, height))
+  out.set(softenPaintedEdges(out, width, height))
 }
 
 /** Blends the drawings' outlines, cavities and tongues by `shape` into `blended`. */
-function blendOutline(shape: Readonly<ContinuousMouthShape>): void {
+function blendOutline(shape: Readonly<Anime25DContinuousMouthShape>): void {
   const wide = clamp01(shape.wide)
   const round = clamp01(shape.round)
   const scale = wide + round > 1 ? 1 / (wide + round) : 1
