@@ -12,17 +12,19 @@ Myriad 2.5D 形象的渲染层：在一块画布上用 WebGL2 画出一套 rig �
 ## 安装
 
 ```sh
-pnpm add @myriad/figure-player
+pnpm add @myriad-you/figure-player
 ```
 
 > 这个包还没有发布到 npm。发布之前可以从 git 按提交装：`pnpm add github:Myriad-You/myriad-figure-player#<提交>`。从 git 装到的是 TypeScript 源码（`src/`，`exports` 指向它），要由宿主的打包工具（Vite 等）编译；从 npm 装到的是 `dist/` 里编好的 ESM、`.d.ts` 和 source map。两种装法入口和名字相同。
 
-在浏览器里运行，需要 WebGL2；没有运行时依赖。包里没有 Worker，也没有要另外拷贝的资源文件。
+在浏览器里运行，需要 WebGL2；没有运行时依赖。包里没有 Worker，也没有要另外拷贝的资源文件。没有写 `engines`：包不在 Node 里运行，Node 只经宿主的打包工具碰到它，版本要求随那个工具。
+
+**一个应用里只能有一份这个包。** 不要让从 git 装的一份和从 npm 装的一份同时出现（比如应用从 npm 装、它依赖的另一个包从 git 装）：两份是两套模块，同名的类不是同一个类——一份建的 `Anime25DClosedEyePresentation`、`Anime25DIrisRebound` 交给另一份的 `Anime25DStage`，`instanceof` 和类型检查都对不上，舞台会读到另一套代码的对象；两份各自带着自己的着色器和缓存，体积也翻倍。换来源时让所有依赖它的包一起换，并检查锁文件里只解析出一个 `@myriad-you/figure-player`。
 
 一个能跑的最小页面：取一个播放包（`playback.json`）和它的图集（`atlas.png`），画出来，让形象自己动：
 
 ```ts
-import { FigurePlayer, isAnime25DPlayback } from '@myriad/figure-player'
+import { FigurePlayer, isAnime25DPlayback } from '@myriad-you/figure-player'
 
 async function main(): Promise<void> {
   const canvas = document.createElement('canvas')
@@ -125,7 +127,7 @@ pnpm test
 pnpm build   # dist/：三个入口的 ESM、.d.ts 和 source map
 ```
 
-`package.json` 的 `exports` 指向 `src/`，好让从 git 装的宿主直接用源码；打包发布时 `publishConfig` 里的 `exports` 换成 `dist/`。所以要用 `pnpm pack` / `pnpm publish` 打包，`npm pack` 不会换。`.github/workflows/release.yml` 在推送版本标签时构建并发布（带 npm provenance）；`package.json` 标着 `"private": true` 时它在发布前就停下。
+`package.json` 的 `exports` 指向 `src/`，好让从 git 装的宿主直接用源码；打包发布时 `publishConfig` 里的 `exports` 换成 `dist/`。所以要用 `pnpm pack` / `pnpm publish` 打包，`npm pack` 不会换。`.github/workflows/release.yml` 在推送版本标签时构建并发布（npm 可信发布，带 provenance）；`package.json` 标着 `"private": true`、版本还是 `0.0.0`、标签和版本不符、或者标签的提交不在 `main` 上时，它在构建之前就停下。构建出的 JS 每个文件开头都带着第三方许可的说明（`/*! … */`，压缩时保留），`LICENSE` 末尾附有第三方的 MIT 全文，`NOTICE` 说明哪些部分来自哪里。
 
 `contracts/merope_rig_contract.json` 是 [myriad-core](https://github.com/Myriad-You/myriad-core) `shared/` 里 rig 契约的逐字节副本，不手改。
 

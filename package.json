@@ -58,9 +58,6 @@
     "contracts",
     "NOTICE"
   ],
-  "engines": {
-    "node": ">=20.19"
-  },
   "scripts": {
     "build": "tsdown",
     "prepublishOnly": "pnpm run build",
