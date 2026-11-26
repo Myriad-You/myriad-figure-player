@@ -5,14 +5,62 @@
   "private": true,
   "packageManager": "pnpm@11.25.0",
   "description": "The render layer of Myriad's 2.5D figure: a canvas stage that draws a rig package as a driving moves it.",
+  "author": "Myriad Contributors",
   "license": "MIT",
+  "homepage": "https://github.com/Myriad-You/myriad-figure-player#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Myriad-You/myriad-figure-player.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Myriad-You/myriad-figure-player/issues"
+  },
+  "keywords": [
+    "webgl2",
+    "2.5d",
+    "character",
+    "rig",
+    "canvas",
+    "animation"
+  ],
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
     "./internals": "./src/internals.ts",
-    "./workbench": "./src/workbench.ts"
+    "./workbench": "./src/workbench.ts",
+    "./package.json": "./package.json"
   },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./internals": {
+        "types": "./dist/internals.d.ts",
+        "default": "./dist/internals.js"
+      },
+      "./workbench": {
+        "types": "./dist/workbench.d.ts",
+        "default": "./dist/workbench.js"
+      },
+      "./package.json": "./package.json"
+    },
+    "types": "./dist/index.d.ts"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test-support.ts",
+    "!src/**/*.fixture.ts",
+    "contracts",
+    "NOTICE"
+  ],
   "scripts": {
+    "build": "tsdown",
+    "prepublishOnly": "pnpm run build",
     "lint": "eslint .",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit"
@@ -21,6 +69,7 @@
     "@antfu/eslint-config": "^9.5.1",
     "@types/node": "26.5.1",
     "eslint": "^10.13.0",
+    "tsdown": "0.23.7",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3"
   }
