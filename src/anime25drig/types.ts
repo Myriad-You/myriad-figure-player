@@ -1,11 +1,11 @@
 import type { PoseCorrection, PoseCorrectionV7 } from './poseCorrections'
 import type { Anime25DTurnKeyforms } from './turnKeyforms'
 import {
+  ANIME25D_PLAYBACK_CURRENT_KIND,
+  ANIME25D_PLAYBACK_CURRENT_VERSION,
   ANIME25D_PLAYBACK_KIND,
   ANIME25D_PLAYBACK_VERSION,
   ANIME25D_PROJECT_NAME,
-  FIGURE_PACKAGE_KIND,
-  FIGURE_PACKAGE_VERSION,
 } from './credit'
 import { isCredits, isEnhancement, isOptionalPartProfile, isPlaybackAnchors, isPlaybackCanvas, isPlaybackLayers, playbackMeshesFit } from './playbackValidation'
 import { isPoseCorrections, isPoseCorrectionsV7 } from './poseCorrections'
@@ -381,7 +381,7 @@ export interface Anime25DPlaybackContent<Correction> {
 }
 
 /** A work a package is made with, credited as its licence asks. */
-export interface FigureCredit {
+export interface Anime25DCredit {
   name: string
   url?: string
   license?: string
@@ -390,9 +390,9 @@ export interface FigureCredit {
 
 /** A package of the current version (docs/format.md), and the form the runtime holds every package in. */
 export interface Anime25DPlayback extends Anime25DPlaybackContent<PoseCorrection> {
-  kind: typeof FIGURE_PACKAGE_KIND
-  version: typeof FIGURE_PACKAGE_VERSION
-  credits?: FigureCredit[]
+  kind: typeof ANIME25D_PLAYBACK_CURRENT_KIND
+  version: typeof ANIME25D_PLAYBACK_CURRENT_VERSION
+  credits?: Anime25DCredit[]
 }
 
 /** A package of version 7: its identity names the reference project, and its pose-correction axes have their old keys. */
@@ -463,8 +463,8 @@ export function isAnime25DPlayback(value: unknown): value is Anime25DPlaybackDoc
         record.engine === ANIME25D_PROJECT_NAME &&
         [record.engineUrl, record.license, record.copyright].every(isCredit) &&
         isPlaybackContent(record, isPoseCorrectionsV7)
-    case FIGURE_PACKAGE_VERSION:
-      return record.kind === FIGURE_PACKAGE_KIND &&
+    case ANIME25D_PLAYBACK_CURRENT_VERSION:
+      return record.kind === ANIME25D_PLAYBACK_CURRENT_KIND &&
         (record.credits === undefined || isCredits(record.credits)) &&
         isPlaybackContent(record, isPoseCorrections)
     default:

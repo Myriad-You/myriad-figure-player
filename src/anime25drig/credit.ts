@@ -13,5 +13,5 @@ export const CREDITED_AUTHORS = [
 export const ANIME25D_PLAYBACK_KIND = 'anime-2.5d-rig' as const
 export const ANIME25D_PLAYBACK_VERSION = 7
 /** The current version of the package format (docs/format.md) and its kind. */
-export const FIGURE_PACKAGE_KIND = 'myriad-figure' as const
-export const FIGURE_PACKAGE_VERSION = 8
+export const ANIME25D_PLAYBACK_CURRENT_KIND = 'myriad-figure' as const
+export const ANIME25D_PLAYBACK_CURRENT_VERSION = 8

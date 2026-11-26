@@ -3,7 +3,7 @@
 This document specifies the Myriad figure package: the data a host hands to the figure player so that it can draw and
 animate a layered 2.5D figure. It is written for a third party implementing a reader or a writer.
 
-The reference implementation is this repository. Where this document names a source file (for example
+The reference implementation is this repository, the package `@myriad-you/figure-player`. Where this document names a source file (for example
 `src/anime25drig/types.ts`), that file is normative for anything this document leaves out. Where the two disagree,
 report it: the disagreement is a defect in one of them.
 
@@ -151,7 +151,7 @@ A reader refuses a package whose `version` it does not read. It does not fall ba
 - `readAnime25DPlayback` and `writeAnime25DPlayback` throw a `FigureError` with code `anime25dPlaybackVersion` and
   params `version` (the value found, as a string) and `read` (the versions read, as `"7, 8"`). The English fallback
   message is `This figure package is of version {version}; this player reads versions {read}.`
-- The list of versions read is exported as `FIGURE_PACKAGE_VERSIONS_READ` (`[7, 8]`, oldest first).
+- The list of versions read is exported as `ANIME25D_PLAYBACK_VERSIONS_READ` (`[7, 8]`, oldest first).
 
 ### 3.3 Fixed sub-block versions
 
@@ -1148,7 +1148,8 @@ The pose is a JSON object. Three kinds of value are encoded as an object with ex
 
 ### 9.3 Version 1 driver keys
 
-Version 1 keeps 16 driver fields under other keys. Every other field is under its own name in both versions.
+Version 1 keeps 16 driver fields and 6 switches under other keys. Every other field is under its own name in both
+versions.
 
 | Version 2 (driver field) | Version 1 key |
 |---|---|
@@ -1168,9 +1169,18 @@ Version 1 keeps 16 driver fields under other keys. Every other field is under it
 | `bodyLean` | `body` |
 | `torsoFollow` | `bodyYaw` |
 | `rearHairSway` | `physAmp` |
+| `torsoBreath` | `idle` |
+| `physics` | `phys` |
+| `idleSway` | `rand` |
+| `autoBlink` | `blink` |
+| `followPointer` | `mouse` |
+| `talking` | `talk` |
 
-Reading version 1 renames these keys inside `driver` only, keeping their order, and sets `version` to 2. The rest of
-the document is the same in both versions.
+Version 1 has no `hairWind` and no `breathing`: its `idle` switched the hair's wind as well as the torso's breath,
+and the stage always breathed. Reading version 1 renames these keys inside `driver` only, keeping their order; then,
+where the driver has no `hairWind`, sets it to the value read as `torsoBreath`, and where it has no `breathing`, sets
+it to `true` (both added after the other fields). It sets `version` to 2. The rest of the document is the same in both
+versions.
 
 ### 9.4 Fields (`Anime25DPose`)
 
@@ -1214,7 +1224,8 @@ figure the pose is drawn on.
   `browTiltL`, `browTiltR`, `browTilt`, `bangL`, `bangC`, `bangR`, `armY`, `armPos`, `armRaiseL`, `armRaiseR`,
   `armSwingL`, `armSwingR`, `bust`, `bustY`, `irisScale`, `eyeSmile`, `eyeWide`, `mouthEase`, `eyeEase`, `fhAmp`,
   `fhSoft`, `eyeCY`, `eyeCAng`, `mouthCAng`, `eyeScaleL`, `eyeScaleR`, `mouthScale`.
-- Booleans: `idle`, `blink`, `rand`, `thinking`, `singing`, `talk`, `mouse`, `phys`.
+- Booleans: `breathing`, `torsoBreath`, `hairWind`, `physics`, `idleSway`, `autoBlink`, `followPointer`, `thinking`,
+  `singing`, `talking`.
 
 Their ranges are `DRIVER_LIMITS` in `src/anime25drig/driver.ts`.
 

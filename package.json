@@ -55,7 +55,9 @@
     "!src/**/*.test.ts",
     "!src/**/*.test-support.ts",
     "!src/**/*.fixture.ts",
+    "!src/**/fixtures",
     "contracts",
+    "docs/format.md",
     "NOTICE"
   ],
   "scripts": {

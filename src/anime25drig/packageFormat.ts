@@ -1,11 +1,11 @@
-import type { Anime25DPlayback, Anime25DPlaybackDocument, Anime25DPlaybackV7, FigureCredit } from './types'
+import type { Anime25DCredit, Anime25DPlayback, Anime25DPlaybackDocument, Anime25DPlaybackV7 } from './types'
 import { FigureError } from '../errors'
 import {
+  ANIME25D_PLAYBACK_CURRENT_KIND,
+  ANIME25D_PLAYBACK_CURRENT_VERSION,
   ANIME25D_PLAYBACK_KIND,
   ANIME25D_PLAYBACK_VERSION,
   ANIME25D_PROJECT_NAME,
-  FIGURE_PACKAGE_KIND,
-  FIGURE_PACKAGE_VERSION,
 } from './credit'
 import { poseCorrectionsFromV7, poseCorrectionsToV7 } from './poseCorrections'
 
@@ -13,9 +13,9 @@ import { poseCorrectionsFromV7, poseCorrectionsToV7 } from './poseCorrections'
 // Which version a package is of is its `version` field alone.
 
 /** The versions this player reads, oldest first. */
-export const FIGURE_PACKAGE_VERSIONS_READ = [ANIME25D_PLAYBACK_VERSION, FIGURE_PACKAGE_VERSION] as const
+export const ANIME25D_PLAYBACK_VERSIONS_READ = [ANIME25D_PLAYBACK_VERSION, ANIME25D_PLAYBACK_CURRENT_VERSION] as const
 
-export type FigurePackageVersion = typeof FIGURE_PACKAGE_VERSIONS_READ[number]
+export type Anime25DPlaybackVersion = typeof ANIME25D_PLAYBACK_VERSIONS_READ[number]
 
 /**
  * A package as the runtime holds it, whichever version it was written in: one of the current version is itself; one of
@@ -25,13 +25,13 @@ export type FigurePackageVersion = typeof FIGURE_PACKAGE_VERSIONS_READ[number]
  */
 export function readAnime25DPlayback(document: Anime25DPlaybackDocument): Anime25DPlayback {
   const version: unknown = (document as { version?: unknown } | null)?.version
-  if (version === FIGURE_PACKAGE_VERSION) return document as Anime25DPlayback
+  if (version === ANIME25D_PLAYBACK_CURRENT_VERSION) return document as Anime25DPlayback
   if (version !== ANIME25D_PLAYBACK_VERSION) throw unreadable(version)
   const { engine, engineUrl, license, copyright } = document as Anime25DPlaybackV7
-  const credit: FigureCredit = { name: engine, ...defined({ url: engineUrl, license, copyright }) }
+  const credit: Anime25DCredit = { name: engine, ...defined({ url: engineUrl, license, copyright }) }
   return convert(document, {
-    kind: FIGURE_PACKAGE_KIND,
-    version: FIGURE_PACKAGE_VERSION,
+    kind: ANIME25D_PLAYBACK_CURRENT_KIND,
+    version: ANIME25D_PLAYBACK_CURRENT_VERSION,
     credits: [credit],
   }, poseCorrectionsFromV7 as (corrections: never) => unknown) as unknown as Anime25DPlayback
 }
@@ -42,10 +42,10 @@ export function readAnime25DPlayback(document: Anime25DPlaybackDocument): Anime2
  * same, key for key.
  */
 export function writeAnime25DPlayback(playback: Anime25DPlayback, version: typeof ANIME25D_PLAYBACK_VERSION): Anime25DPlaybackV7
-export function writeAnime25DPlayback(playback: Anime25DPlayback, version: typeof FIGURE_PACKAGE_VERSION): Anime25DPlayback
-export function writeAnime25DPlayback(playback: Anime25DPlayback, version: FigurePackageVersion): Anime25DPlaybackDocument
-export function writeAnime25DPlayback(playback: Anime25DPlayback, version: FigurePackageVersion): Anime25DPlaybackDocument {
-  if (version === FIGURE_PACKAGE_VERSION) return playback
+export function writeAnime25DPlayback(playback: Anime25DPlayback, version: typeof ANIME25D_PLAYBACK_CURRENT_VERSION): Anime25DPlayback
+export function writeAnime25DPlayback(playback: Anime25DPlayback, version: Anime25DPlaybackVersion): Anime25DPlaybackDocument
+export function writeAnime25DPlayback(playback: Anime25DPlayback, version: Anime25DPlaybackVersion): Anime25DPlaybackDocument {
+  if (version === ANIME25D_PLAYBACK_CURRENT_VERSION) return playback
   if (version !== ANIME25D_PLAYBACK_VERSION) throw unreadable(version)
   const credit = playback.credits?.find(entry => entry.name === ANIME25D_PROJECT_NAME)
   return convert(playback, {
@@ -79,7 +79,7 @@ function convert(
 }
 
 function unreadable(version: unknown): FigureError {
-  return new FigureError('anime25dPlaybackVersion', { version: String(version), read: FIGURE_PACKAGE_VERSIONS_READ.join(', ') })
+  return new FigureError('anime25dPlaybackVersion', { version: String(version), read: ANIME25D_PLAYBACK_VERSIONS_READ.join(', ') })
 }
 
 /** The fields that have a value. */

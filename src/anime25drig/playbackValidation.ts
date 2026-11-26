@@ -1,4 +1,4 @@
-import type { Anime25DArmModel, Anime25DArmVariant, Anime25DEnhancement, Anime25DFade, Anime25DJointName, Anime25DPart, Anime25DPartProfile, Anime25DPlayback, Anime25DPlaybackAnchors, Anime25DPlaybackLayer, Anime25DShellProfile, Anime25DSkeleton, FigureCredit } from './types'
+import type { Anime25DArmModel, Anime25DArmVariant, Anime25DCredit, Anime25DEnhancement, Anime25DFade, Anime25DJointName, Anime25DPart, Anime25DPartProfile, Anime25DPlayback, Anime25DPlaybackAnchors, Anime25DPlaybackLayer, Anime25DShellProfile, Anime25DSkeleton } from './types'
 import { resolveAnime25DLayerSemantics } from '../rig/anime25dLayerSemantics'
 import { MAX_RIG_PARTS } from '../rig/contract'
 import { everyItem } from '../rig/lists'
@@ -225,7 +225,7 @@ function isPartProfile(value: unknown): value is Anime25DPartProfile {
 }
 
 /** The works a package credits: a name each, and what its licence asks to be kept. */
-export function isCredits(value: unknown): value is FigureCredit[] {
+export function isCredits(value: unknown): value is Anime25DCredit[] {
   return Array.isArray(value) && value.length <= MAX_CREDITS && everyItem(value, credit =>
     isRecord(credit) &&
     isText(credit.name, MAX_NAME) &&
