@@ -107,6 +107,16 @@ const DRIVER_FIELDS_BY_JSON_KEY: Readonly<Record<string, string>> = Object.fromE
   Object.entries(DRIVER_JSON_KEYS).map(([field, key]) => [key, field]),
 )
 
+/**
+ * A driver as poses wrote it before `hairWind` and `breathing` were switches of their own: its `idle` (read as
+ * `torsoBreath`) switched the hair's wind as well, and the stage always breathed.
+ */
+function completeDriver(driver: Record<string, unknown>): Record<string, unknown> {
+  if (!Object.hasOwn(driver, 'hairWind') && typeof driver.torsoBreath === 'boolean') driver.hairWind = driver.torsoBreath
+  if (!Object.hasOwn(driver, 'breathing')) driver.breathing = true
+  return driver
+}
+
 /** The driver with its keys renamed, in the order it has them. */
 function renameKeys(driver: object, names: Readonly<Record<string, string>>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(driver).map(([key, value]) => [Object.hasOwn(names, key) ? names[key]! : key, value]))
@@ -137,7 +147,7 @@ export function poseFromJSON(text: string): Anime25DPose {
     return value
   }) as Anime25DPose | null
   const driver: unknown = pose?.driver
-  if (typeof driver === 'object' && driver !== null) pose!.driver = renameKeys(driver, DRIVER_FIELDS_BY_JSON_KEY) as unknown as Anime25DDriver
+  if (typeof driver === 'object' && driver !== null) pose!.driver = completeDriver(renameKeys(driver, DRIVER_FIELDS_BY_JSON_KEY)) as unknown as Anime25DDriver
   return pose as Anime25DPose
 }
 

@@ -93,3 +93,22 @@ test('at either end it is the pose itself, and neither is changed', () => {
   assert.equal(blendPoses(a, b, 0), a)
   assert.equal(blendPoses(a, b, 1), b)
 })
+
+test('a pose written before the breath and the wind had switches of their own reads back whole', () => {
+  // Written by the release before `breathing` and `hairWind`: `idle` held the wind as well.
+  const text = '{"version":1,"figure":"2-abc","time":0.25,"driver":{"angleX":0.25,"angleY":0,"angleZ":0,"eyeOpenL":1,"eyeOpenR":1,"eyeDizzy":0,"eyeSqueeze":0,"eyeCry":0,"anger":0,"speechless":0,"accentNotes":0,"accentQuestion":0,"accentSleep":0,"accentSparkle":0,"accentBlush":0,"handWaveL":0,"handPointL":0,"handChestL":0,"handChinL":0,"handWaveR":0,"handPointR":0,"handChestR":0,"handChinR":0,"maniac":0,"silly":0,"lovestruck":0,"eyeX":0,"eyeY":0,"brow":0,"mouthOpen":0,"mouthWide":0,"mouthRound":0,"mouthNarrow":0,"mouthSeal":0,"mouthForm":0,"mouthCY":0,"body":0,"bodyYaw":1,"torsoTurn":0,"bodyLift":0,"bodyPitch":0,"physAmp":0.5,"soft":2,"browAngL":0,"browAngR":0,"browAngSym":0,"bangL":0,"bangC":0,"bangR":0,"armY":0,"armPos":0,"armRaiseL":0,"armRaiseR":0,"armSwingL":0,"armSwingR":0,"bust":2.5,"bustY":1,"irisScale":1,"eyeSmile":0,"eyeWide":0,"mouthEase":0.45,"eyeEase":0.3,"fhAmp":1,"fhSoft":0.4,"eyeCY":0,"eyeCAng":0,"mouthCAng":0,"eyeScaleL":1,"eyeScaleR":1,"mouthScale":1,"idle":false,"blink":true,"rand":false,"thinking":false,"singing":false,"talk":false,"mouse":true,"phys":false},"frame":{"viewWidth":10,"viewHeight":20,"bodyPivotX":0.25,"bodyPivotY":0,"bodyRotationCosine":1,"bodyRotationSine":0,"bodyBendHeight":0,"time":0.25,"eyeCry":0},"order":{"u16":"AAABAA=="},"layers":[{"transform":{"f32":"AACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAACAPgAAAAAAAIA/"},"opacity":1,"multiply":null,"behindFace":0,"vertices":{"f32":"AAAAP6uqqj4="}}],"collar":null,"mouth":null,"sticker":null,"arms":[]}'
+  const pose = poseFromJSON(text)
+  assert.deepEqual(pose.driver, {
+    ...IDENTITY_DRIVER,
+    headYaw: 0.25,
+    torsoBreath: false,
+    hairWind: false,
+    breathing: true,
+    idleSway: false,
+    physics: false,
+    talking: false,
+    followPointer: true,
+  })
+  assert.deepEqual(Object.keys(pose.driver).sort(), Object.keys(IDENTITY_DRIVER).sort())
+  assert.deepEqual(pose.layers[0]!.vertices, Float32Array.of(0.5, 1 / 3))
+})
