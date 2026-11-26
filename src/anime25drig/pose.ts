@@ -1,5 +1,5 @@
 import type { Anime25DArmSide } from './armVariantPresenter'
-import type { ContinuousMouthShape } from './continuousMouth'
+import type { Anime25DContinuousMouthShape } from './continuousMouth'
 import type { Anime25DDriver } from './driver'
 import type { Anime25DRenderFrame } from './renderer'
 import type { Anime25DSpinnerFrame } from './spinnerSticker'
@@ -69,7 +69,7 @@ export interface Anime25DPose {
   order: Uint16Array
   layers: Anime25DLayerPose[]
   collar: Float32Array | null
-  mouth: ContinuousMouthShape | null
+  mouth: Anime25DContinuousMouthShape | null
   sticker: Anime25DSpinnerFrame | null
   arms: Anime25DArmPose[]
 }

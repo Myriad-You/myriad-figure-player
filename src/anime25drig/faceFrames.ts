@@ -1,4 +1,4 @@
-import type { ClosedEyePresentation } from './closedEyePresentation'
+import type { Anime25DClosedEyePresentation } from './closedEyePresentation'
 import type { ContinuousMouthTexture } from './continuousMouthTexture'
 import type { Anime25DDeformationChangeState } from './deformationDependencies'
 import type { Anime25DDriver } from './driver'
@@ -85,7 +85,7 @@ export class Anime25DFaceFrames {
   constructor(
     private readonly current: Anime25DDriver,
     private readonly irisRebound: Anime25DIrisRebound,
-    private readonly closedEyes: ClosedEyePresentation,
+    private readonly closedEyes: Anime25DClosedEyePresentation,
   ) {}
 
   /** Measures a new package's mouths and face; the face keeps the one it has until it is bound. */

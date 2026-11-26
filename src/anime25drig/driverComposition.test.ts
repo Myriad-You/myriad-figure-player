@@ -3,10 +3,10 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { IDENTITY_DRIVER } from './driver'
 import {
-  applyAnime25DSillyMouthOwnership,
+  applyAnime25DStickerMouthShare,
   BLINK_SECONDS,
   prepareAnime25DWorkingTarget,
-  resolveAnime25DStylizedTargets,
+  resolveAnime25DStickerTargets,
   stepAnime25DBlink,
   stepAnime25DDriverResponse,
 } from './driverComposition'
@@ -301,12 +301,12 @@ test('an interrupted blink finishes instead of springing open', () => {
 
 test('special eyes hold the sticker faces back', () => {
   const output = { anger: 0, speechless: 0, maniac: 0, silly: 0, lovestruck: 0 }
-  const resolved = resolveAnime25DStylizedTargets(output, { ...IDENTITY_DRIVER, maniac: 1, silly: 2 })
+  const resolved = resolveAnime25DStickerTargets(output, { ...IDENTITY_DRIVER, maniac: 1, silly: 2 })
   assert.equal(resolved, output)
   assert.deepEqual(resolved, { anger: 0, speechless: 0, maniac: 1, silly: 1, lovestruck: 0 })
-  resolveAnime25DStylizedTargets(output, { ...IDENTITY_DRIVER, maniac: 1, eyeCry: 0.75 })
+  resolveAnime25DStickerTargets(output, { ...IDENTITY_DRIVER, maniac: 1, eyeCry: 0.75 })
   assert.equal(output.maniac, 0.25)
-  resolveAnime25DStylizedTargets(output, { ...IDENTITY_DRIVER, maniac: 1, eyeDizzy: 1 })
+  resolveAnime25DStickerTargets(output, { ...IDENTITY_DRIVER, maniac: 1, eyeDizzy: 1 })
   assert.equal(output.maniac, 0)
 })
 
@@ -321,7 +321,7 @@ test('silly mouth ownership only attenuates owned speech channels', () => {
     lipCurve: -0.3,
     mouthCY: 0.25,
   }
-  applyAnime25DSillyMouthOwnership(target, 0.75)
+  applyAnime25DStickerMouthShare(target, 0.75)
   assert.deepEqual(
     {
       jaw: target.jaw,

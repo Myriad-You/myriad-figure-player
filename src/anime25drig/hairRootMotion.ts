@@ -1,5 +1,5 @@
 import type { AttachmentMeshSample } from './attachmentMesh'
-import type { BodyLift } from './bodyLift'
+import type { Anime25DBodyLift } from './bodyLift'
 import type { Anime25DSecondaryDeformationBinding, Anime25DSecondaryDeformationFrame } from './secondaryDeformation'
 import type { Anime25DPlaybackLayer } from './types'
 import { bindAttachmentMesh, offsetAttachmentMeshSample } from './attachmentMesh'
@@ -49,7 +49,7 @@ export function writeHairRootMotion(
   bodyPivotY: number,
   bodyCosine: number,
   bodySine: number,
-  bodyLift?: Readonly<BodyLift>,
+  bodyLift?: Readonly<Anime25DBodyLift>,
 ): void {
   const { samples, point, deformation } = roots
   for (let i = 0; i < samples.length; i++) {

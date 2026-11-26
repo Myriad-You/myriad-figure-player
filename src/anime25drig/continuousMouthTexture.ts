@@ -1,6 +1,6 @@
 import type { PaintedLips } from '../expressionShapes/lipMouth'
 import type { MouthExpressionPalette } from '../expressionShapes/mouthExpression'
-import type { ContinuousMouthShape } from './continuousMouth'
+import type { Anime25DContinuousMouthShape } from './continuousMouth'
 import type { Anime25DOwnTexture } from './renderer'
 import type { Anime25DPlaybackAnchors, Anime25DPlaybackLayer } from './types'
 import type { CroppedLayerPixels } from './webglRuntime'
@@ -81,7 +81,7 @@ export class ContinuousMouthTexture {
   private readonly innerHeight: number
   private readonly painted: Uint8ClampedArray
   private readonly upload: Uint8Array
-  private readonly last: ContinuousMouthShape = { wide: Number.NaN, round: Number.NaN, narrow: Number.NaN }
+  private readonly last: Anime25DContinuousMouthShape = { wide: Number.NaN, round: Number.NaN, narrow: Number.NaN }
 
   constructor(
     private readonly gl: WebGL2RenderingContext,
@@ -116,7 +116,7 @@ export class ContinuousMouthTexture {
   }
 
   /** Repaints for the voice's current blend, when it has changed enough to show. */
-  paint(shape: Readonly<ContinuousMouthShape>): boolean {
+  paint(shape: Readonly<Anime25DContinuousMouthShape>): boolean {
     const last = this.last
     if (
       Math.abs(shape.wide - last.wide) < REPAINT_STEP &&
@@ -130,12 +130,12 @@ export class ContinuousMouthTexture {
   }
 
   /** The shape it is painted in. */
-  get shape(): Readonly<ContinuousMouthShape> {
+  get shape(): Readonly<Anime25DContinuousMouthShape> {
     return this.last
   }
 
   /** Paints this very shape, however near the one before. */
-  show(shape: Readonly<ContinuousMouthShape>): void {
+  show(shape: Readonly<Anime25DContinuousMouthShape>): void {
     const { last } = this
     if (shape.wide === last.wide && shape.round === last.round && shape.narrow === last.narrow) return
     last.wide = shape.wide

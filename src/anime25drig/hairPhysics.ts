@@ -40,7 +40,7 @@ interface FaceVerticalBounds {
   y1: number
 }
 
-export interface HairStrandDynamics {
+export interface Anime25DHairStrandDynamics {
   /** The lock's length over the face's height (1 when it cannot be read). */
   lengthRatio: number
   amplitudeScale: number
@@ -163,7 +163,7 @@ export function hairStrandDynamics(
   rootY: number,
   tipY: number,
   referenceHeight: number,
-): HairStrandDynamics {
+): Anime25DHairStrandDynamics {
   const strandLength = tipY - rootY
   if (
     !Number.isFinite(strandLength) ||

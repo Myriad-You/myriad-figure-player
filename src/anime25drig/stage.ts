@@ -1,7 +1,7 @@
 import type { MeropeRigManifest } from '../rig/types'
 import type { Anime25DArmAim } from './arm3dReach'
 import type { Anime25DArmSide } from './armVariantPresenter'
-import type { ClosedEyePresentation } from './closedEyePresentation'
+import type { Anime25DClosedEyePresentation } from './closedEyePresentation'
 import type { CollarClipMesh } from './collarRuntime'
 import type { DrawnFrame } from './drawnFrame'
 import type { Anime25DDriver } from './driver'
@@ -31,7 +31,7 @@ import { Anime25DFaceFrames } from './faceFrames'
 import { animationCatchupSeconds, animationElapsedSeconds, animationSubstepCount } from './frameClock'
 import { deformLayers, settleDependentLayers } from './layerFrameDeformation'
 import { drawOrder } from './legOrder'
-import { Anime25DPerformanceTelemetry, createAnime25DFrameWork } from './performanceTelemetry'
+import { Anime25DFrameCostTelemetry, createAnime25DFrameWork } from './performanceTelemetry'
 import { describeAnime25DPlayback } from './playerDebug'
 import { inspectAnime25DFrame } from './playerInspection'
 import { releaseCompiledGpu, touchLayersFor } from './playerPackage'
@@ -49,7 +49,7 @@ import { compileProgram, loadImage } from './webglRuntime'
 /** What the stage and its driving share: the driving writes them, the stage draws them. */
 export interface Anime25DStageShared {
   current: Anime25DDriver
-  closedEyes: ClosedEyePresentation
+  closedEyes: Anime25DClosedEyePresentation
   irisRebound: Anime25DIrisRebound
 }
 
@@ -85,14 +85,14 @@ export class Anime25DStage<Measured = unknown> {
   private atlasTexture: WebGLTexture | null = null
   private touchAtlas: TouchAtlas | null = null
   private touchLayers: TouchPaintLayer[] = []
-  private readonly performanceTelemetry = new Anime25DPerformanceTelemetry()
+  private readonly performanceTelemetry = new Anime25DFrameCostTelemetry()
   private readonly current: Anime25DDriver
   private readonly deformationPoint = { x: 0, y: 0 }
   private readonly jellyShift = { x: 0, y: 0 }
 
   private time = 0
   private readonly irisRebound: Anime25DIrisRebound
-  private readonly closedEyes: ClosedEyePresentation
+  private readonly closedEyes: Anime25DClosedEyePresentation
   private readonly body: Anime25DBodyFrames
   private readonly armVariants = new Anime25DArmVariants()
   private readonly face: Anime25DFaceFrames

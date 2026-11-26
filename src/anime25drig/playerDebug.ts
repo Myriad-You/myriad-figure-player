@@ -1,6 +1,6 @@
 import type { Anime25DDriver } from './driver'
 import type { Anime25DMotionEnvelopeProfile } from './motionEnvelope'
-import type { Anime25DPerformanceSnapshot } from './performanceTelemetry'
+import type { Anime25DFrameCostSnapshot } from './performanceTelemetry'
 import type { Anime25DFade, Anime25DPlayback } from './types'
 
 export interface Anime25DDebugSnapshot {
@@ -35,7 +35,8 @@ export interface Anime25DDebugSnapshot {
     torsoLimit: number
     armLimit: number
   }
-  performance: Anime25DPerformanceSnapshot
+  /** What the frames have cost the CPU lately. */
+  frameCost: Anime25DFrameCostSnapshot
   current: Anime25DDriver
 }
 
@@ -67,7 +68,7 @@ const DEBUG_FADE_COUNTS = {
 export function describeAnime25DPlayback(
   playback: Readonly<Anime25DPlayback>,
   motionEnvelopeProfile: Readonly<Anime25DMotionEnvelopeProfile>,
-  performance: Anime25DPerformanceSnapshot,
+  frameCost: Anime25DFrameCostSnapshot,
   current: Anime25DDriver,
 ): Anime25DDebugSnapshot {
   const layers = playback.layers
@@ -90,7 +91,7 @@ export function describeAnime25DPlayback(
       torsoLimit: motionEnvelopeProfile.torso.limit,
       armLimit: motionEnvelopeProfile.rigidArm.limit,
     },
-    performance,
+    frameCost,
     current,
   }
 }

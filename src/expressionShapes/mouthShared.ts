@@ -10,4 +10,4 @@ export interface MouthExpressionPalette {
 }
 
 /** A point of a generated mouth's outline, in the mouth's own unit box. */
-export type MouthPathPoint = readonly [x: number, y: number]
+export type Anime25DMouthPathPoint = readonly [x: number, y: number]

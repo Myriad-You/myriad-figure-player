@@ -21,13 +21,13 @@ const MIN_MOUTH_ASPECT = 0.22
 
 /** The painted mouth's lips and teeth, or null for a cel line mouth. */
 /** A drawn mouth's pixels: RGBA, row by row. */
-export interface MouthPixels {
+export interface Anime25DMouthPixels {
   width: number
   height: number
   data: Uint8ClampedArray
 }
 
-export function detectPaintedLips(mouth: Readonly<MouthPixels>): PaintedLips | null {
+export function detectPaintedLips(mouth: Readonly<Anime25DMouthPixels>): PaintedLips | null {
   const { width, height, data } = mouth
   if (width < 8 || height < 4 || data.length !== width * height * 4) return null
   let visible = 0
@@ -68,7 +68,7 @@ export function detectPaintedLips(mouth: Readonly<MouthPixels>): PaintedLips | n
 /** The opening sits a little high: the lower lip is the fuller one. */
 export const LIP_PARTING_OFFSET = -0.06
 
-export interface LipParting {
+export interface Anime25DLipParting {
   openingX: number
   openingY: number
   lineX: number
@@ -82,7 +82,7 @@ export interface LipParting {
  * round drawings (the rest being open or wide, which part alike). A narrow
  * mouth is mostly lip with a thin slit; a round one shows less of its teeth.
  */
-export function lipParting(narrow: number, round: number): LipParting {
+export function lipParting(narrow: number, round: number): Anime25DLipParting {
   const n = Math.max(0, Math.min(1, narrow))
   const r = Math.max(0, Math.min(1 - n, round))
   return {

@@ -1,4 +1,4 @@
-import type { BodyLift } from './bodyLift'
+import type { Anime25DBodyLift } from './bodyLift'
 import type { CollarClipMesh } from './collarRuntime'
 import type { Anime25DDriver } from './driver'
 import type { Anime25DGpuLayer } from './layerGpuBinding'
@@ -67,7 +67,7 @@ export interface Anime25DInspectionInput {
 
 export function inspectAnime25DFrame(input: Anime25DInspectionInput): Anime25DInspection {
   const frame = input.renderFrame
-  const lift: Readonly<BodyLift> | undefined = frame.bodyLift ? { ...frame.bodyLift } : undefined
+  const lift: Readonly<Anime25DBodyLift> | undefined = frame.bodyLift ? { ...frame.bodyLift } : undefined
   const lean = Math.atan2(frame.bodyRotationSine, frame.bodyRotationCosine)
   const { bodyPivotX: pivotX, bodyPivotY: pivotY, bodyBendHeight: bend } = frame
   const face = input.layers.find(layer => layer.source.role === 'face')

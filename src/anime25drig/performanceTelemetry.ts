@@ -10,7 +10,7 @@ export interface Anime25DFrameWork {
   drawCalls: number
 }
 
-export interface Anime25DPerformanceSample extends Anime25DFrameWork {
+export interface Anime25DFrameCostSample extends Anime25DFrameWork {
   frameCpuMs: number
   driverMs: number
   springsMs: number
@@ -18,7 +18,7 @@ export interface Anime25DPerformanceSample extends Anime25DFrameWork {
   drawSubmitMs: number
 }
 
-export interface Anime25DPerformanceSnapshot extends Anime25DPerformanceSample {
+export interface Anime25DFrameCostSnapshot extends Anime25DFrameCostSample {
   samples: number
 }
 
@@ -26,7 +26,7 @@ const SAMPLE_INTERVAL_FRAMES = 30
 const OBSERVATION_WINDOW_FRAMES = 120
 const SMOOTHING = 0.25
 
-const EMPTY_SAMPLE: Anime25DPerformanceSample = {
+const EMPTY_SAMPLE: Anime25DFrameCostSample = {
   frameCpuMs: 0,
   driverMs: 0,
   springsMs: 0,
@@ -43,14 +43,14 @@ const EMPTY_SAMPLE: Anime25DPerformanceSample = {
   drawCalls: 0,
 }
 const SAMPLE_KEYS = Object.keys(EMPTY_SAMPLE) as Array<
-  keyof Anime25DPerformanceSample
+  keyof Anime25DFrameCostSample
 >
 
-export class Anime25DPerformanceTelemetry {
+export class Anime25DFrameCostTelemetry {
   private frame = 0
   private observationFrames = 0
   private samples = 0
-  private readonly average: Anime25DPerformanceSample = { ...EMPTY_SAMPLE }
+  private readonly average: Anime25DFrameCostSample = { ...EMPTY_SAMPLE }
 
   shouldSample(): boolean {
     if (this.observationFrames <= 0) return false
@@ -60,7 +60,7 @@ export class Anime25DPerformanceTelemetry {
     return sample
   }
 
-  record(sample: Anime25DPerformanceSample): void {
+  record(sample: Anime25DFrameCostSample): void {
     const alpha = this.samples === 0 ? 1 : SMOOTHING
     for (const key of SAMPLE_KEYS) {
       const value = finiteNonNegative(sample[key])
@@ -69,11 +69,11 @@ export class Anime25DPerformanceTelemetry {
     this.samples += 1
   }
 
-  snapshot(): Anime25DPerformanceSnapshot {
+  snapshot(): Anime25DFrameCostSnapshot {
     return { ...this.average, samples: this.samples }
   }
 
-  observe(): Anime25DPerformanceSnapshot {
+  observe(): Anime25DFrameCostSnapshot {
     this.observationFrames = OBSERVATION_WINDOW_FRAMES
     return this.snapshot()
   }

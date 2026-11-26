@@ -3,7 +3,7 @@ import type { SpeechMouthMaterial } from './mouthTransition'
 import type { Anime25DPlaybackLayer } from './types'
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { ClosedEyePresentation } from './closedEyePresentation'
+import { Anime25DClosedEyePresentation } from './closedEyePresentation'
 import { IDENTITY_DRIVER } from './driver'
 import { stepAnime25DBlink } from './driverComposition'
 import {
@@ -29,7 +29,7 @@ function fadeOpacity(
 }
 
 test('automatic blinks keep ordinary art; deliberate closure selects alternate per side', () => {
-  const selection = new ClosedEyePresentation()
+  const selection = new Anime25DClosedEyePresentation()
   selection.bind([layer('eye-close2', 'L')])
   const blink = { activeSeconds: 0, nextAtSeconds: 99 }
   for (let i = 0; i < 120; i++) {
@@ -96,7 +96,7 @@ test('alternate closed art uses exactly the ordinary scale, angle and eye-follow
 })
 
 test('unbound artwork cannot take opacity from an ordinary closed eye', () => {
-  const selection = new ClosedEyePresentation()
+  const selection = new Anime25DClosedEyePresentation()
   selection.bind([{ ...layer('eye-close2', 'L'), fade: null }])
   for (let i = 0; i < 60; i++)
     selection.step({ lidL: 0, lidR: 0 }, 1 / 60)

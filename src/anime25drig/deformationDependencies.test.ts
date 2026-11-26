@@ -5,7 +5,7 @@ import {
   ANIME25D_DEFORMATION_EYE,
   ANIME25D_DEFORMATION_JAW,
   ANIME25D_DEFORMATION_MOUTH,
-  ANIME25D_DEFORMATION_STYLIZED,
+  ANIME25D_DEFORMATION_STICKER_FACE,
   ANIME25D_DEFORMATION_TIME,
   captureAnime25DDeformationChanges,
   createAnime25DDeformationChangeState,
@@ -20,7 +20,7 @@ const ALL =
   ANIME25D_DEFORMATION_EYE |
   ANIME25D_DEFORMATION_MOUTH |
   ANIME25D_DEFORMATION_JAW |
-  ANIME25D_DEFORMATION_STYLIZED |
+  ANIME25D_DEFORMATION_STICKER_FACE |
   ANIME25D_DEFORMATION_TIME
 
 const MORPH = {
@@ -82,7 +82,7 @@ test('change capture reports only geometry inputs that actually moved', () => {
     ),
     ANIME25D_DEFORMATION_MOUTH |
       ANIME25D_DEFORMATION_JAW |
-      ANIME25D_DEFORMATION_STYLIZED |
+      ANIME25D_DEFORMATION_STICKER_FACE |
       ANIME25D_DEFORMATION_TIME,
   )
 })
@@ -113,7 +113,7 @@ test('dependency plans classify static, eye, mouth, and timed geometry', () => {
     }),
     ANIME25D_DEFORMATION_MOUTH |
       ANIME25D_DEFORMATION_JAW |
-      ANIME25D_DEFORMATION_STYLIZED,
+      ANIME25D_DEFORMATION_STICKER_FACE,
   )
   assert.equal(
     resolveAnime25DDeformationDependencies({
@@ -130,7 +130,7 @@ test('dependency plans classify static, eye, mouth, and timed geometry', () => {
       ...base,
       expressionDeformationKind: 'lovestruck-heart',
     }),
-    ANIME25D_DEFORMATION_EYE | ANIME25D_DEFORMATION_STYLIZED,
+    ANIME25D_DEFORMATION_EYE | ANIME25D_DEFORMATION_STICKER_FACE,
   )
   assert.equal(
     resolveAnime25DDeformationDependencies({ ...base, baseRole: 'face' }),

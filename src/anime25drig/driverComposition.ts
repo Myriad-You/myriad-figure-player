@@ -1,4 +1,4 @@
-import type { CryMouthMotion } from './cryMotion'
+import type { Anime25DCryMouthMotion } from './cryMotion'
 import type { Anime25DDriver } from './driver'
 import type { PoseResponseController } from './poseResponse'
 import { sampleCryMouthMotion } from './cryMotion'
@@ -21,7 +21,7 @@ export interface Anime25DPointerPose {
   inside: boolean
 }
 
-export interface Anime25DStylizedTargets {
+export interface Anime25DStickerTargets {
   anger: number
   speechless: number
   maniac: number
@@ -67,10 +67,10 @@ function mixPointer(base: number, tracked: number, amount: number): number {
  * The sticker faces as the authored driver asks for them, held back by special eyes (dizzy, squeezed shut,
  * crying), which they cannot be drawn over.
  */
-export function resolveAnime25DStylizedTargets(
-  output: Anime25DStylizedTargets,
+export function resolveAnime25DStickerTargets(
+  output: Anime25DStickerTargets,
   target: Readonly<Anime25DDriver>,
-): Anime25DStylizedTargets {
+): Anime25DStickerTargets {
   const specialEyeBlocker =
     1 -
     Math.max(
@@ -91,7 +91,7 @@ export function applyAnime25DCryMouth(
   currentEyeCry: number,
   timeSeconds: number,
   elapsedSeconds: number,
-  output: CryMouthMotion,
+  output: Anime25DCryMouthMotion,
 ): void {
   const cryResponseRate = target.eyeCry > currentEyeCry ? 6 : 4.5
   const cryAmount = clamp(
@@ -271,7 +271,8 @@ function isAutomationFlag(
   )
 }
 
-export function applyAnime25DSillyMouthOwnership(
+/** Hands `ownership` (0 to 1) of the mouth to the `silly` sticker face: the mouth's driver values keep the rest. */
+export function applyAnime25DStickerMouthShare(
   target: Anime25DDriver,
   ownership: number,
 ): void {

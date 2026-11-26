@@ -90,10 +90,14 @@ export interface Anime25DDriver {
   mouthScale: number
   /**
    * The stage's breath, one every 3.4 s: the head and body rise and fall a little and the chest swells. Off, they
-   * ease to mid-breath and stay there; with every other switch here off too, the figure holds fully still.
+   * ease to mid-breath and stay there (a figure made with it off starts there), and `torsoBreath`, `talking` and
+   * `singing` lift nothing; with the other switches here off too, the figure holds fully still.
    */
   breathing: boolean
-  /** The breath also lifts the upper body; so it does while `talking` or `singing` is on. Read by the stage. */
+  /**
+   * The breath also lifts the upper body; so it does while `talking` or `singing` is on. Read by the stage. With
+   * `breathing` off there is no breath to lift it, whatever this and those say.
+   */
   torsoBreath: boolean
   /** A light wind through the hair springs; needs `physics`. Read by the stage. */
   hairWind: boolean

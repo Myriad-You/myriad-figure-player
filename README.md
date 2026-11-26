@@ -13,14 +13,14 @@ Myriad 2.5D 形象的渲染层：在一块画布上用 WebGL2 画出一套 rig �
 
 `package.json` 的 `exports` 有三个入口，目录里别的文件都是内部的：
 
-- `@myriad/figure-player`（`src/index.ts`）：播放用的一切——`FigurePlayer`、舞台 `Anime25DStage`、驱动接口和基础驱动、姿势（`Anime25DPose`）的 `poseToJSON` / `poseFromJSON` / `blendPoses`、错误 `FigureError`。
-- `@myriad/figure-player/workbench`（`src/workbench.ts`）：给 rig 制作工具用的，播放的页面用不到：舞台交给工具的当前帧和 GPU 图层（`PoseCorrectionStageSource`，经 `Anime25DStage.poseStage()` 取）、姿势修正的拾取与投影、`WORKBENCH_DRIVER`、运动包络探针、写进每个包的参照项目名称、许可和版权。`Anime25DStage.previewPoseCorrections()` 也只给工具用。这个入口不作任何稳定承诺。
-- `@myriad/figure-player/internals`（`src/internals.ts`）：舞台内部一些较低层的零件，是在舞台之上自己写一整套驱动的宿主用得到的那些：包格式的类型和词表（包括从图层名读出角色和分组）、驱动参数的响应与合成步骤、变形和姿势的辅助，以及舞台自己的表情图形辅助——它们读取图上的像素（嘴唇、牙齿、线条的颜色），在载入和绘制时画出生成的嘴形，并给出生成的眼睛图形按眼睛大小取的比例。这份清单不是设计好的工具集，也不完整；不作任何稳定承诺，名字和形状在任何版本都可能变。这个入口本身不含表演系统，也不含做 rig 的工具。只播放的页面用不到。
+- `@myriad-you/figure-player`（`src/index.ts`）：播放用的一切——`FigurePlayer`、舞台 `Anime25DStage`、驱动接口和基础驱动、姿势（`Anime25DPose`）的 `poseToJSON` / `poseFromJSON` / `blendPoses`、错误 `FigureError`。类型只有用这些时要写出名字的那些（`Anime25DPlayback`、`MeropeRigManifest`、`Anime25DDriver`、驱动接口、姿势、调试和检视的结果）；包格式和清单的各个部分的类型在 `./internals`。
+- `@myriad-you/figure-player/workbench`（`src/workbench.ts`）：给 rig 制作工具用的，播放的页面用不到：舞台交给工具的当前帧和 GPU 图层（`PoseCorrectionStageSource`，经 `Anime25DStage.poseStage()` 取）、姿势修正的拾取与投影、`WORKBENCH_DRIVER`、运动包络探针、写进每个包的参照项目名称、许可和版权。`Anime25DStage.previewPoseCorrections()` 也只给工具用。这个入口不作任何稳定承诺。
+- `@myriad-you/figure-player/internals`（`src/internals.ts`）：舞台内部一些较低层的零件，是在舞台之上自己写一整套驱动的宿主用得到的那些：包格式的类型和词表（包括从图层名读出角色和分组）、驱动参数的响应与合成步骤、变形和姿势的辅助，以及舞台自己的表情图形辅助——它们读取图上的像素（嘴唇、牙齿、线条的颜色），在载入和绘制时画出生成的嘴形，并给出生成的眼睛图形按眼睛大小取的比例。这份清单不是设计好的工具集，也不完整；不作任何稳定承诺，名字和形状在任何版本都可能变。这个入口本身不含表演系统，也不含做 rig 的工具。只播放的页面用不到。
 
 ### 最简用法：`FigurePlayer`
 
 ```ts
-import { FigurePlayer } from '@myriad/figure-player'
+import { FigurePlayer } from '@myriad-you/figure-player'
 
 const player = new FigurePlayer(canvas, playback, rigManifest)
 player.resize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio)
@@ -56,11 +56,11 @@ player.set({ lipCurve: 0.4, headYaw: 0.2 })
 ### 自己写驱动
 
 ```ts
-import { Anime25DIrisRebound, Anime25DStage, ClosedEyePresentation, IDENTITY_DRIVER } from '@myriad/figure-player'
+import { Anime25DClosedEyePresentation, Anime25DIrisRebound, Anime25DStage, IDENTITY_DRIVER } from '@myriad-you/figure-player'
 
 const shared = {
   current: { ...IDENTITY_DRIVER },
-  closedEyes: new ClosedEyePresentation(),
+  closedEyes: new Anime25DClosedEyePresentation(),
   irisRebound: new Anime25DIrisRebound(),
 }
 const stage = new Anime25DStage(canvas, playback, rigManifest, driving, shared)

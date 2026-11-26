@@ -2,9 +2,9 @@ import type { Arm3DSide } from './arm3dArm'
 import type { V3 } from './arm3dMath'
 import type { Arm3DBound } from './arm3dView'
 import type { Anime25DArmVariants, DrawnArm, DrawnArms } from './armVariantPresenter'
-import type { BodyLift } from './bodyLift'
+import type { Anime25DBodyLift } from './bodyLift'
 import type { CollarClipMesh } from './collarRuntime'
-import type { ContinuousMouthShape } from './continuousMouth'
+import type { Anime25DContinuousMouthShape } from './continuousMouth'
 import type { ContinuousMouthTexture } from './continuousMouthTexture'
 import type { DrawnFrame } from './drawnFrame'
 import type { Anime25DDriver } from './driver'
@@ -57,7 +57,7 @@ export function moves(layer: Anime25DGpuLayer): boolean {
 export function capturePose(
   figure: PoseFigure,
   drawn: DrawnFrame,
-  state: { key: string, time: number, driver: Anime25DDriver, mouth: Readonly<ContinuousMouthShape> | null },
+  state: { key: string, time: number, driver: Anime25DDriver, mouth: Readonly<Anime25DContinuousMouthShape> | null },
 ): Anime25DPose {
   const { layers } = figure
   return {
@@ -147,11 +147,11 @@ function layerFits(layer: Anime25DGpuLayer, value: unknown): boolean {
     && (moves(layer) ? floats(own.vertices, layer.rest.length) : own.vertices === null)
 }
 
-const liftFits = (lift: Readonly<BodyLift>) => has(lift, LIFT) && [lift.pitch, lift.depth, lift.shoulderY].every(value => value === undefined || finite(value))
+const liftFits = (lift: Readonly<Anime25DBodyLift>) => has(lift, LIFT) && [lift.pitch, lift.depth, lift.shoulderY].every(value => value === undefined || finite(value))
 
-const LIFT: BodyLift = { centerX: 0, upperY: 0, lowerY: 0, amount: 0 }
+const LIFT: Anime25DBodyLift = { centerX: 0, upperY: 0, lowerY: 0, amount: 0 }
 const FRAME: Omit<Anime25DRenderFrame, 'bodyLift'> = { viewWidth: 0, viewHeight: 0, bodyPivotX: 0, bodyPivotY: 0, bodyRotationCosine: 0, bodyRotationSine: 0, bodyBendHeight: 0, time: 0, eyeCry: 0 }
-const MOUTH: ContinuousMouthShape = { wide: 0, round: 0, narrow: 0 }
+const MOUTH: Anime25DContinuousMouthShape = { wide: 0, round: 0, narrow: 0 }
 const STICKER: Anime25DSpinnerFrame = { time: 0, amount: 0, x: 0, y: 0, size: 0 }
 
 function armFits(side: string, arm: Arm3DSide, value: unknown): boolean {

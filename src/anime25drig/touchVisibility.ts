@@ -1,5 +1,5 @@
 import type { Anime25DRenderableLayer, Anime25DRenderFrame } from './renderer'
-import type { TouchMesh, TouchMeshHit } from './touchHitTest'
+import type { Anime25DTouchMeshHit, TouchMesh } from './touchHitTest'
 import { hitTestTouchMesh, sampleTouchAlpha } from './touchHitTest'
 
 /** The part of the figure a touch lands on. */
@@ -18,7 +18,7 @@ export interface TouchAtlas {
   height: number
 }
 
-export interface VisibleTouchHit extends TouchMeshHit {
+export interface VisibleTouchHit extends Anime25DTouchMeshHit {
   layerIndex: number
   /** An opaque unknown layer blocks hits behind it, without guessing anatomy. */
   region: Anime25DTouchRegion | null
@@ -52,7 +52,7 @@ export function hitTestVisibleTouch(
   atlas: TouchAtlas,
   frame: Anime25DRenderFrame,
 ): VisibleTouchHit | null {
-  const alphaAt = (hit: TouchMeshHit) => sampleTouchAlpha(atlas.alpha, atlas.width, atlas.height, hit.u, hit.v)
+  const alphaAt = (hit: Anime25DTouchMeshHit) => sampleTouchAlpha(atlas.alpha, atlas.width, atlas.height, hit.u, hit.v)
   const eyeVisible = (side: string | null) => {
     if (side !== 'L' && side !== 'R') return false
     return layers.some(({ paint, mesh }) => {
@@ -106,7 +106,7 @@ export function touchRegionForRole(role: string): Anime25DTouchRegion | null {
   return null
 }
 
-function touchNeckOpacity(paint: TouchPaintLayer['paint'], hit: TouchMeshHit): number {
+function touchNeckOpacity(paint: TouchPaintLayer['paint'], hit: Anime25DTouchMeshHit): number {
   const fade = paint.neckSurfaceFade
   if (!fade || fade.end <= fade.start) return 1
   const rect = paint.source.atlas

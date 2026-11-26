@@ -1,22 +1,22 @@
 import type { MeropeRigManifest } from '../rig/types'
-import type { CryMouthMotion } from './cryMotion'
+import type { Anime25DCryMouthMotion } from './cryMotion'
 import type { Anime25DDriver } from './driver'
-import type { Anime25DBlinkState, Anime25DPointerPose, Anime25DStylizedTargets } from './driverComposition'
+import type { Anime25DBlinkState, Anime25DPointerPose, Anime25DStickerTargets } from './driverComposition'
 import type { Anime25DBoundBody, Anime25DDirectedBodyControl, Anime25DDriving, Anime25DFrameSample } from './driving'
-import type { IdleSwayOffset } from './idleSway'
+import type { Anime25DIdleSwayOffset } from './idleSway'
 import type { Anime25DMotionEnvelopeProfile, Anime25DMotionEnvelopeResult } from './motionEnvelope'
 import type { Anime25DStageShared } from './stage'
 import type { Anime25DStickerFaceMotion } from './stickerFaceMotion'
 import type { Anime25DPlayback } from './types'
 import { bodyKeyShare, headRidesBody } from './bodyTurnKeyforms'
-import { ClosedEyePresentation } from './closedEyePresentation'
+import { Anime25DClosedEyePresentation } from './closedEyePresentation'
 import { IDENTITY_DRIVER, sanitizeDriverPatch } from './driver'
 import {
   applyAnime25DCryMouth,
-  applyAnime25DSillyMouthOwnership,
+  applyAnime25DStickerMouthShare,
   mixBoundedExpressionChannel,
   prepareAnime25DWorkingTarget,
-  resolveAnime25DStylizedTargets,
+  resolveAnime25DStickerTargets,
   smoothAnime25DUnit,
   stepAnime25DBlink,
   stepAnime25DDriverResponse,
@@ -51,7 +51,7 @@ const SWAY_RELEASE_RATE = 6.2
 const SWAY_GATE_ATTACK_HZ = 8
 const SWAY_GATE_RELEASE_HZ = 4.5
 /** A sticker face or a special eye above this shuts out the blink, and holds the iris still. */
-const STYLIZED_EYES = 0.03
+const STICKER_EYES = 0.03
 /** The share of a sticker face's head pulse that comes through while nothing performs. */
 const IDLE_STICKER_HEAD_SHARE = 0.25
 
@@ -79,7 +79,7 @@ const BASIC_DRIVER: Readonly<Anime25DDriver> = { ...IDENTITY_DRIVER, talking: fa
  * `idleSway` the sway of head and body, `autoBlink` the blinks, `followPointer` the pointer; `breathing`,
  * `torsoBreath`, `hairWind` and `physics` are read by the stage itself from `current`.
  *
- * Speech, song, directed poses, behaviours, stickers and the stylized faces' own motion are not here: what they would
+ * Speech, song, directed poses, behaviours, the spinner sticker and the sticker faces' own motion are not here: what they would
  * give the stage is what the stage reads when nothing performs. `random` decides the blinks; seed it for a repeatable
  * figure.
  */
@@ -87,7 +87,7 @@ export class Anime25DBasicDriving implements Anime25DDriving<Anime25DBasicFigure
   /** What the stage shares with this driving; hand it to the stage with this driving. */
   readonly shared: Anime25DStageShared = {
     current: { ...BASIC_DRIVER },
-    closedEyes: new ClosedEyePresentation(),
+    closedEyes: new Anime25DClosedEyePresentation(),
     irisRebound: new Anime25DIrisRebound(),
   }
 
@@ -112,9 +112,9 @@ export class Anime25DBasicDriving implements Anime25DDriving<Anime25DBasicFigure
   private swayShare = Number.NaN
   private swayWeight = Number.NaN
   private swayVelocity = 0
-  private readonly sway: IdleSwayOffset = { headYaw: 0, headPitch: 0, headRoll: 0, bodyLean: 0 }
-  private readonly stylizedTargets: Anime25DStylizedTargets = { anger: 0, speechless: 0, maniac: 0, silly: 0, lovestruck: 0 }
-  private readonly cryMouth: CryMouthMotion = { jaw: 0, lipCurve: 0, mouthCY: 0, mouthScale: 0 }
+  private readonly sway: Anime25DIdleSwayOffset = { headYaw: 0, headPitch: 0, headRoll: 0, bodyLean: 0 }
+  private readonly stickerTargets: Anime25DStickerTargets = { anger: 0, speechless: 0, maniac: 0, silly: 0, lovestruck: 0 }
+  private readonly cryMouth: Anime25DCryMouthMotion = { jaw: 0, lipCurve: 0, mouthCY: 0, mouthScale: 0 }
   private readonly envelopeResult: Anime25DMotionEnvelopeResult = { clippedEnergy: 0, transferredEnergy: 0 }
   private readonly poseResponse = new PoseResponseController()
   private readonly gazeBlink = new GazeShiftBlink()
@@ -156,11 +156,11 @@ export class Anime25DBasicDriving implements Anime25DDriving<Anime25DBasicFigure
     const pointerRate = pointerWanted > this.pointerAuthority ? POINTER_ATTACK_RATE : POINTER_RELEASE_RATE
     this.pointerAuthority += (pointerWanted - this.pointerAuthority) * (1 - Math.exp(-pointerRate * dt))
     const working = prepareAnime25DWorkingTarget(this.working, target, pointer, this.pointerAuthority)
-    const stylized = resolveAnime25DStylizedTargets(this.stylizedTargets, working)
+    const stickers = resolveAnime25DStickerTargets(this.stickerTargets, working)
 
     this.addIdleSway(working, dt, time, target.idleSway ? (target.followPointer && pointer.inside ? POINTER_SWAY_SHARE : 1) : 0)
     applyAnime25DCryMouth(working, current.eyeCry, time, dt, this.cryMouth)
-    applyAnime25DSillyMouthOwnership(working, smoothAnime25DUnit(stylized.silly) * this.stickerMouthShare)
+    applyAnime25DStickerMouthShare(working, smoothAnime25DUnit(stickers.silly) * this.stickerMouthShare)
     working.headYaw += working.torsoTurn * this.figure.headRidesBody
     projectAnime25DMotionEnvelope(working, this.motionEnvelope, this.envelopeResult)
     this.shared.closedEyes.step(working, dt)
@@ -172,7 +172,7 @@ export class Anime25DBasicDriving implements Anime25DDriving<Anime25DBasicFigure
     this.unblinkedLidL = current.lidL
     this.unblinkedLidR = current.lidR
 
-    const blinkSuppressed = stylized.maniac > STYLIZED_EYES || stylized.silly > STYLIZED_EYES
+    const blinkSuppressed = stickers.maniac > STICKER_EYES || stickers.silly > STICKER_EYES
     const blinking = this.blinkState.activeSeconds >= 0
     if (
       this.gazeBlink.step(current.headYaw, current.headPitch, current.gazeX, current.gazeY, dt, blinking, this.random)
@@ -188,11 +188,11 @@ export class Anime25DBasicDriving implements Anime25DDriving<Anime25DBasicFigure
       current.gazeX,
       current.gazeY,
       Math.max(
-        stylized.maniac, stylized.silly, stylized.lovestruck,
+        stickers.maniac, stickers.silly, stickers.lovestruck,
         current.maniac, current.silly, current.lovestruck,
         working.eyeCry, working.eyeDizzy, working.eyeSqueeze,
         current.eyeCry, current.eyeDizzy, current.eyeSqueeze,
-      ) > STYLIZED_EYES,
+      ) > STICKER_EYES,
     )
   }
 

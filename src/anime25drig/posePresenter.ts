@@ -1,4 +1,4 @@
-import type { ContinuousMouthShape } from './continuousMouth'
+import type { Anime25DContinuousMouthShape } from './continuousMouth'
 import type { DrawingParts, DrawnFrame } from './drawnFrame'
 import type { Anime25DDriver } from './driver'
 import type { Anime25DPose } from './pose'
@@ -18,7 +18,7 @@ export interface PresentedFigure extends PoseFigure {
  */
 export class PosePresenter {
   private key: string | null = null
-  private shown: { pose: DrawnFrame, mouth: ContinuousMouthShape | null } | null = null
+  private shown: { pose: DrawnFrame, mouth: Anime25DContinuousMouthShape | null } | null = null
 
   constructor(private readonly parts: DrawingParts) {}
 

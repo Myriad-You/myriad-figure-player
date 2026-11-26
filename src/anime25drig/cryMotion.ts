@@ -1,4 +1,4 @@
-export interface CryMouthMotion {
+export interface Anime25DCryMouthMotion {
   jaw: number
   lipCurve: number
   mouthCY: number
@@ -8,7 +8,7 @@ export interface CryMouthMotion {
 export function sampleCryMouthMotion(
   intensity: number,
   timeSeconds: number,
-  output: CryMouthMotion,
+  output: Anime25DCryMouthMotion,
 ): void {
   const amount = clamp(intensity, 0, 1)
   if (amount <= 0.001) {

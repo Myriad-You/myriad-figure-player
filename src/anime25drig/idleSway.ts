@@ -1,5 +1,5 @@
 /** The idle sway's offsets over the pose, in driver units. */
-export interface IdleSwayOffset {
+export interface Anime25DIdleSwayOffset {
   headYaw: number
   headPitch: number
   headRoll: number
@@ -9,8 +9,8 @@ export interface IdleSwayOffset {
 /** The idle sway at `timeSeconds`: slow, incommensurate swings of the head's turn, nod and tilt and the body's lean. */
 export function idleSwayOffset(
   timeSeconds: number,
-  output: IdleSwayOffset = { headYaw: 0, headPitch: 0, headRoll: 0, bodyLean: 0 },
-): IdleSwayOffset {
+  output: Anime25DIdleSwayOffset = { headYaw: 0, headPitch: 0, headRoll: 0, bodyLean: 0 },
+): Anime25DIdleSwayOffset {
   const time = Number.isFinite(timeSeconds) ? timeSeconds : 0
   output.headYaw =
     0.13 * Math.sin(time * 0.42) + 0.05 * Math.sin(time * 1.13)

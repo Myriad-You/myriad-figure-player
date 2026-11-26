@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
-  Anime25DPerformanceTelemetry,
+  Anime25DFrameCostTelemetry,
   createAnime25DFrameWork,
 } from './performanceTelemetry'
 
 test('samples one frame out of every thirty', () => {
-  const telemetry = new Anime25DPerformanceTelemetry()
+  const telemetry = new Anime25DFrameCostTelemetry()
   assert.equal(telemetry.shouldSample(), false)
   telemetry.observe()
   const samples = Array.from({ length: 61 }, () => telemetry.shouldSample())
@@ -17,7 +17,7 @@ test('samples one frame out of every thirty', () => {
 })
 
 test('reports a smoothed and allocation-safe workload snapshot', () => {
-  const telemetry = new Anime25DPerformanceTelemetry()
+  const telemetry = new Anime25DFrameCostTelemetry()
   const work = createAnime25DFrameWork()
   work.deformedLayers = 20
   work.deformedVertices = 4_000
@@ -55,7 +55,7 @@ test('reports a smoothed and allocation-safe workload snapshot', () => {
 })
 
 test('sanitizes invalid measurements at the telemetry boundary', () => {
-  const telemetry = new Anime25DPerformanceTelemetry()
+  const telemetry = new Anime25DFrameCostTelemetry()
   telemetry.record({
     frameCpuMs: Number.NaN,
     driverMs: -1,

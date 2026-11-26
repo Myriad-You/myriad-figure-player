@@ -8,7 +8,7 @@ type MouthDeformationExpression = Pick<
   'eyeCry' | 'mouthCAng' | 'mouthCY' | 'lipCurve' | 'mouthScale'
 >
 
-type MouthStylizedMotion = Pick<
+type MouthStickerFaceMotion = Pick<
   Anime25DStickerFaceMotion,
   'maniacUpperMouthPulse' | 'sillyMouthOpen'
 >
@@ -28,7 +28,7 @@ export interface Anime25DMouthDeformationFrame {
   jawDrop: number
   jawOpen: number
   time: number
-  stickerFaceMotion: Readonly<MouthStylizedMotion> | null
+  stickerFaceMotion: Readonly<MouthStickerFaceMotion> | null
 }
 
 export interface Anime25DMutableMouthPoint {
