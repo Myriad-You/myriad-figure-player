@@ -11,10 +11,11 @@ Myriad 2.5D 形象的渲染层：在一块画布上用 WebGL2 画出一套 rig �
 
 ## 入口
 
-`package.json` 的 `exports` 有两个入口，目录里别的文件都是内部的：
+`package.json` 的 `exports` 有三个入口，目录里别的文件都是内部的：
 
 - `@myriad/figure-player`（`src/index.ts`）：播放用的一切——`FigurePlayer`、舞台 `Anime25DStage`、驱动接口和基础驱动、姿势（`Anime25DPose`）的 `poseToJSON` / `poseFromJSON` / `blendPoses`、错误 `FigureError`。
 - `@myriad/figure-player/workbench`（`src/workbench.ts`）：给 rig 制作工具用的，播放的页面用不到：舞台交给工具的当前帧和 GPU 图层（`PoseCorrectionStageSource`，经 `Anime25DStage.poseStage()` 取）、姿势修正的拾取与投影、`WORKBENCH_DRIVER`、运动包络探针。`Anime25DStage.previewPoseCorrections()` 也只给工具用。这个入口不作任何稳定承诺。
+- `@myriad/figure-player/internals`（`src/internals.ts`）：给在舞台之上自己搭一整套驱动（表演系统）或做 rig 包的工具的宿主：包格式的类型和词表、驱动参数的响应与合成步骤、变形和姿势的辅助、舞台自己用的表情图形辅助，让宿主算出的和舞台画的一致。这里只是舞台已有的内部零件，不带 rig 工具或表演生成器；名字和形状随内部改动，任何版本都可能变，不作任何稳定承诺。只播放的页面用不到。
 
 ### 最简用法：`FigurePlayer`
 
