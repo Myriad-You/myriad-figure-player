@@ -1,0 +1,71 @@
+Myriad figure player
+Copyright (c) 2026 Myriad Contributors
+Licensed under the MIT License; see LICENSE.
+
+This package includes or follows the third-party work below.
+
+--------------------------------------------------------------------------------
+Anime2.5DRig
+https://github.com/852wa/Anime2.5DRig
+MIT License, Copyright (c) 2026 hakoniwa (full text below)
+
+Revisions followed:
+- d48825867acd081de22b0e7b5585bb562288796d: the reference runtime. The base
+  bind, deform and fade math of the layer runtime follows it (among others
+  src/anime25drig/layerBinding.ts and src/anime25drig/layerDeformation.ts).
+  The original JavaScript and HTML are not included.
+- 8deb51b7f93984191dfd5805becb349bbe58f90f (2026-09-07): its prepass eye-mask
+  approach informs the separate left-eye, right-eye and collar masks of the
+  renderer, and the iris reopening squash/rebound
+  (src/anime25drig/irisRebound.ts).
+- 7ddbd9943ea3152561b3dc8348fd752c850f3e95 (v2.0): the soft eye-white mask that clips irises
+  (src/anime25drig/renderer.ts).
+
+src/anime25drig/credit.ts names the project, its license and copyright; these
+are recorded in every playback package.
+
+--------------------------------------------------------------------------------
+Anime2.5DRig research fork by izumix77
+https://github.com/izumix77/Anime2.5DRig
+MIT License (the license of Anime2.5DRig, full text below)
+Revision 1644759cd451ab82065e2bf57b21fe806e2be334
+
+Ellipsoid head/scalp projection, side-profile shaping, feathered hairline pin,
+delayed topwear/bottomwear cylinder projection, and bounded chest-volume yaw
+and silhouette response are adapted from this fork and reimplemented here
+(among others src/anime25drig/shellDeformation.ts,
+src/anime25drig/secondaryDeformation.ts and
+src/anime25drig/torsoDeformation.ts). The fork's demo UI, curve editor,
+tuning storage, camera input and recording are not included.
+
+--------------------------------------------------------------------------------
+contracts/merope_rig_contract.json
+A byte copy of shared/merope_rig_contract.json in myriad-core
+(https://github.com/Myriad-You/myriad-core), revision 66a760c6f. Not edited
+here. Its sole author licenses this file under the MIT License for this
+package; the copy in myriad-core stays under that repository's license.
+
+--------------------------------------------------------------------------------
+Anime2.5DRig license text:
+
+MIT License
+
+Copyright (c) 2026 hakoniwa
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
