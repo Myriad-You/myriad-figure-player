@@ -1,4 +1,4 @@
-import type { Anime25DPlayback } from '../anime25drig/types'
+import type { Anime25DPlaybackDocument } from '../anime25drig/types'
 import type {
   CharacterAssetProfile,
   RIG_SEMANTIC_BONE_ROLES,
@@ -132,5 +132,5 @@ export interface MeropeRigManifest {
   semanticAnchors?: Record<string, RigSemanticAnchor>
   semantics?: RigSemantics
   spatialProfile?: RigSpatialProfile
-  anime25dPlayback?: Anime25DPlayback
+  anime25dPlayback?: Anime25DPlaybackDocument
 }

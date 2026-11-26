@@ -111,11 +111,15 @@ stage.tick(1 / 60) // 每个子步调用 driving.step()，它写 shared.current
 
 `Anime25DBasicDriving` 也可以直接交给舞台（`new Anime25DStage(canvas, playback, rigManifest, driving, driving.shared)`），在它的 `target` 之上再加自己的东西时可以从它开始。
 
-报错是带错误码和参数的 `FigureError`，消息是英文兜底，页面按错误码换成自己的话。本包只抛两种：`anime25dWebglFailed`（浏览器没有 WebGL2）和 `anime25dPlaybackFailed`（GPU 资源或图集出错）。
+报错是带错误码和参数的 `FigureError`，消息是英文兜底，页面按错误码换成自己的话。本包抛六种：`anime25dWebglFailed`（浏览器没有 WebGL2）、`anime25dPlaybackFailed`（GPU 资源或图集出错）、`anime25dPlaybackVersion`（包的版本本包不认）、`anime25dPlaybackInvalid`（第 7 版的包缺了换算要用的形状）、`anime25dPlaybackUnconvertible`（换成另一个版本会丢掉值，例如第 7 版装不下的署名）和 `anime25dPoseVersion`（姿势 JSON 的版本本包不认）。
 
 ## 包的格式
 
-舞台画的播放包（`Anime25DPlayback` 和它的图集，加上可选的 `MeropeRigManifest`）由 Myriad 自己的 rig 工具生成。这个格式还没有给第三方定版本：没有公开的规格，也不保证兼容，1.0 之前会变。本包不带生成或转换播放包的工具：拿到一个包（通常是存下来的 JSON）后，先用 `isAnime25DPlayback()` 检查它是不是本版舞台认得的包，再交给 `FigurePlayer` 或舞台；舞台本身不做这项检查。
+舞台画的包（播放文档、它的图集，加上可选的 `MeropeRigManifest`）和姿势 JSON 的格式写在 [docs/format.md](docs/format.md)：每个字段的类型、单位、坐标约定、校验器检查的界限，以及版本和兼容的规则。包由 Myriad 自己的 rig 工具生成，本包不带生成或转换图集的工具。
+
+- 包有两个版本，由顶层的 `version` 决定按哪套规则读：7（现在写出的版本）和 8（`kind: "myriad-figure"`，姿势修正的轴用驱动参数的名字）。读的一方两个都认，写的一方等所有读的一方都认 8 之后再换。别的版本拒绝。
+- 拿到一个包（通常是存下来的 JSON）后，先用 `isAnime25DPlayback()` 检查它是不是本版舞台认得的包，再交给 `FigurePlayer` 或舞台；舞台本身不做这项检查，只按版本把它换成自己拿着的形式（`readAnime25DPlayback()`，版本 8 的形状），不认的版本抛 `anime25dPlaybackVersion`。`writeAnime25DPlayback()` 把这个形式按指定的版本写回去。
+- 姿势 JSON 现在写版本 2（驱动参数用自己的名字），版本 1 也读。
 
 ## 开发
 
@@ -130,6 +134,8 @@ pnpm build   # dist/：三个入口的 ESM、.d.ts 和 source map
 `package.json` 的 `exports` 指向 `src/`，好让从 git 装的宿主直接用源码；打包发布时 `publishConfig` 里的 `exports` 换成 `dist/`。所以要用 `pnpm pack` / `pnpm publish` 打包，`npm pack` 不会换。`.github/workflows/release.yml` 在推送版本标签时构建并发布（npm 可信发布，带 provenance）；`package.json` 标着 `"private": true`、版本还是 `0.0.0`、标签和版本不符、或者标签的提交不在 `main` 上时，它在构建之前就停下。构建出的 JS 每个文件开头都带着第三方许可的说明（`/*! … */`），`LICENSE` 末尾附有第三方的 MIT 全文，`NOTICE` 说明哪些部分来自哪里。webpack（terser）压缩时把这段说明放进 `*.LICENSE.txt`；Vite 8 压缩时去掉所有许可注释，要用 `build.license: true`，它生成的 `.vite/license.md` 收录本包的 `LICENSE`，第三方全文也在里面。
 
 `contracts/merope_rig_contract.json` 是 [myriad-core](https://github.com/Myriad-You/myriad-core) `shared/` 里 rig 契约的逐字节副本，不手改。
+
+`contracts/figure_package_conformance.json` 是共用核心 `crates/conformance/v1/figure/package.json` 的逐字节副本：形象包的接受和拒收用例，服务端的校验和本包的测试都跑，同样不手改。
 
 ## 许可
 

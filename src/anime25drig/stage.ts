@@ -21,7 +21,7 @@ import type { PoseCorrectionStageSource } from './poseCorrectionStage'
 import type { PresentedFigure } from './posePresenter'
 import type { Anime25DRendererBindings, Anime25DRenderFrame } from './renderer'
 import type { TouchAtlas, TouchPaintLayer, VisibleTouchHit } from './touchVisibility'
-import type { Anime25DPlayback } from './types'
+import type { Anime25DPlayback, Anime25DPlaybackDocument } from './types'
 import { FigureError } from '../errors'
 import { Anime25DArmVariants } from './armVariantPresenter'
 import { Anime25DBodyFrames } from './bodyFrames'
@@ -31,6 +31,7 @@ import { Anime25DFaceFrames } from './faceFrames'
 import { animationCatchupSeconds, animationElapsedSeconds, animationSubstepCount } from './frameClock'
 import { deformLayers, settleDependentLayers } from './layerFrameDeformation'
 import { drawOrder } from './legOrder'
+import { readAnime25DPlayback } from './packageFormat'
 import { Anime25DFrameCostTelemetry, createAnime25DFrameWork } from './performanceTelemetry'
 import { describeAnime25DPlayback } from './playerDebug'
 import { inspectAnime25DFrame } from './playerInspection'
@@ -114,11 +115,12 @@ export class Anime25DStage<Measured = unknown> {
 
   constructor(
     canvas: HTMLCanvasElement,
-    playback: Anime25DPlayback,
+    playback: Anime25DPlaybackDocument,
     rigManifest: MeropeRigManifest | undefined,
     private readonly driving: Anime25DDriving<Measured>,
     shared: Anime25DStageShared,
   ) {
+    const held = readAnime25DPlayback(playback)
     this.current = shared.current
     this.irisRebound = shared.irisRebound
     this.closedEyes = shared.closedEyes
@@ -153,7 +155,7 @@ export class Anime25DStage<Measured = unknown> {
       bindings = createAnime25DRendererBindings(gl, this.program)
       this.rendererBindings = bindings
       this.poses = new PosePresenter({ gl, program: this.program, bindings, armVariants: this.armVariants, sticker: this.spinnerSticker })
-      this.adoptPackage(measurePackage(this.parts, playback, rigManifest))
+      this.adoptPackage(measurePackage(this.parts, held, rigManifest))
     } catch (error) {
       // A failed constructor has no owner that can call dispose().
       if (bindings) disposeAnime25DRendererBindings(gl, bindings)
@@ -169,16 +171,17 @@ export class Anime25DStage<Measured = unknown> {
    * gestures are raised flat.
    */
   async replaceLivePackage(
-    playback: Anime25DPlayback,
+    playback: Anime25DPlaybackDocument,
     rigManifest: MeropeRigManifest | undefined,
     atlasUrl: string,
   ): Promise<void> {
+    const held = readAnime25DPlayback(playback)
     this.atlasAbort?.abort()
     const atlasAbort = new AbortController()
     this.atlasAbort = atlasAbort
     const image = await loadImage(atlasUrl, atlasAbort.signal)
     if (this.disposed || atlasAbort.signal.aborted) return
-    const next = prepareSwap(this.parts, playback, rigManifest, image)
+    const next = prepareSwap(this.parts, held, rigManifest, image)
     if (this.disposed || atlasAbort.signal.aborted) {
       releaseSwap(this.parts, next)
       return

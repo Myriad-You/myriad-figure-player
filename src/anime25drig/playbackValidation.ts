@@ -1,4 +1,4 @@
-import type { Anime25DArmModel, Anime25DArmVariant, Anime25DEnhancement, Anime25DFade, Anime25DJointName, Anime25DPart, Anime25DPartProfile, Anime25DPlayback, Anime25DPlaybackAnchors, Anime25DPlaybackLayer, Anime25DShellProfile, Anime25DSkeleton } from './types'
+import type { Anime25DArmModel, Anime25DArmVariant, Anime25DCredit, Anime25DEnhancement, Anime25DFade, Anime25DJointName, Anime25DPart, Anime25DPartProfile, Anime25DPlayback, Anime25DPlaybackAnchors, Anime25DPlaybackLayer, Anime25DShellProfile, Anime25DSkeleton } from './types'
 import { resolveAnime25DLayerSemantics } from '../rig/anime25dLayerSemantics'
 import { MAX_RIG_PARTS } from '../rig/contract'
 import { everyItem } from '../rig/lists'
@@ -30,6 +30,7 @@ const MAX_STRANDS = 32
 /** A package's part inventory lists at most 12. */
 const MAX_PROFILE_PARTS = 64
 const MAX_RADII = 256
+const MAX_CREDITS = 16
 /** Each layer's mesh is drawn by 16-bit indices, the last of which means a new strip. (The rig contract's limits are for the manifest's own parts, which are not drawn.) */
 const MAX_LAYER_VERTICES = 65_535
 /** All of them together, for what they take to hold: with the most strands, some 250 bytes a vertex. */
@@ -149,7 +150,7 @@ function isStrands(value: unknown): boolean {
  */
 export function playbackMeshesFit(
   playback: Pick<Anime25DPlayback, 'layers' | 'anchors' | 'pixelCanvas' | 'partProfile'>,
-  shell: Anime25DShellProfile,
+  shell: Anime25DShellProfile<unknown>,
 ): boolean {
   const vertices = (source: Anime25DPlaybackLayer, cutPiece = false) => layerMeshVertexBound({
     source,
@@ -222,6 +223,21 @@ function isPartProfile(value: unknown): value is Anime25DPartProfile {
       isShare(part.stiffness) &&
       isShare(part.weight))
 }
+
+/**
+ * The works a package credits, at least one: a name each, and what its licence asks to be kept. Lengths are in UTF-16
+ * code units; a name is not blank when some character in it is neither Unicode White_Space nor U+FEFF (the server's
+ * validator counts and reads them the same way).
+ */
+export function isCredits(value: unknown): value is Anime25DCredit[] {
+  return Array.isArray(value) && value.length > 0 && value.length <= MAX_CREDITS && everyItem(value, credit =>
+    isRecord(credit) &&
+    typeof credit.name === 'string' && CONTENT.test(credit.name) && credit.name.length <= MAX_NAME &&
+    [credit.url, credit.license, credit.copyright].every(field => field === undefined || (typeof field === 'string' && field.length <= MAX_NAME)))
+}
+
+/** A character that is neither Unicode White_Space nor U+FEFF. */
+const CONTENT = /[^\p{White_Space}\uFEFF]/u
 
 export function isEnhancement(value: unknown): value is Anime25DEnhancement {
   return isRecord(value) &&

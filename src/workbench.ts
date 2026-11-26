@@ -7,8 +7,8 @@ export { ANIME25D_COPYRIGHT, ANIME25D_LICENSE, ANIME25D_PROJECT_NAME, ANIME25D_P
 export { WORKBENCH_DRIVER } from './anime25drig/driver'
 export type { Anime25DMotionEnvelopeProbeId } from './anime25drig/motionEnvelope'
 export { ANIME25D_MOTION_ENVELOPE_PROBES } from './anime25drig/motionEnvelope'
-export type { PoseCorrection, PoseCorrectionAxis, PoseCorrectionDriver } from './anime25drig/poseCorrections'
-export { isPoseCorrections } from './anime25drig/poseCorrections'
+export type { PoseCorrection, PoseCorrectionAxis, PoseCorrectionAxisV7, PoseCorrectionDriver, PoseCorrectionV7 } from './anime25drig/poseCorrections'
+export { isPoseCorrections, isPoseCorrectionsV7, poseCorrectionsFromV7, poseCorrectionsToV7 } from './anime25drig/poseCorrections'
 export type { PoseCorrectionAtlas, PoseCorrectionPlayerLayer, PoseCorrectionStageLayer, PoseCorrectionStageSource, PoseCorrectionSurface } from './anime25drig/poseCorrectionStage'
 export {
   clientDeltaToPoseCorrection,

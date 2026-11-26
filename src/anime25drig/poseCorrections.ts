@@ -3,11 +3,13 @@ import type { Anime25DShellEllipsoid } from './types'
 import { everyItem } from '../rig/lists'
 
 /**
- * A correction's axes, keyed in `at` as a package writes them: the head's turn and nod (`angleX`, `angleY`, read
- * from the driver's headYaw and headPitch), each eye's closing, and the mouth's opening (`mouthOpen`, from jaw).
+ * A correction's axes, keyed in `at`: the head's turn and nod (the driver's headYaw and headPitch), how far each eye
+ * is closed (one less the driver's lidL or lidR), and the jaw's opening (jaw).
  */
-export type PoseCorrectionAxis =
-  'angleX' | 'angleY' | 'eyeCloseL' | 'eyeCloseR' | 'mouthOpen'
+export type PoseCorrectionAxis = 'headYaw' | 'headPitch' | 'lidCloseL' | 'lidCloseR' | 'jaw'
+
+/** The axes as a package of version 7 keys them, in the same order as PoseCorrectionAxis's. */
+export type PoseCorrectionAxisV7 = 'angleX' | 'angleY' | 'eyeCloseL' | 'eyeCloseR' | 'mouthOpen'
 
 /**
  * Asset-space residuals (Lewis et al., https://scribblethink.org/Work/PSD/PSD.pdf).
@@ -17,9 +19,9 @@ export type PoseCorrectionAxis =
  * Patches sum (including overlaps); a higher-order key must contain only the
  * residual left AFTER lower-order corrections, never a second absolute pose.
  */
-export interface PoseCorrection {
+export interface PoseCorrection<Axis extends string = PoseCorrectionAxis> {
   surface: 'head' | 'front-hair' | 'back-hair'
-  at: Partial<Record<PoseCorrectionAxis, number>>
+  at: Partial<Record<Axis, number>>
   patches: Array<{
     x: number
     y: number
@@ -30,21 +32,72 @@ export interface PoseCorrection {
   }>
 }
 
-const AXES: readonly PoseCorrectionAxis[] = [
-  'angleX',
-  'angleY',
-  'eyeCloseL',
-  'eyeCloseR',
-  'mouthOpen',
-]
+/** A correction as a package of version 7 writes it. */
+export type PoseCorrectionV7 = PoseCorrection<PoseCorrectionAxisV7>
+
+const AXES: readonly PoseCorrectionAxis[] = ['headYaw', 'headPitch', 'lidCloseL', 'lidCloseR', 'jaw']
+const HEAD_AXES: ReadonlySet<string> = new Set<PoseCorrectionAxis>(['headYaw', 'headPitch'])
+
+/** Each axis's version 7 key. */
+const V7_AXES = {
+  headYaw: 'angleX',
+  headPitch: 'angleY',
+  lidCloseL: 'eyeCloseL',
+  lidCloseR: 'eyeCloseR',
+  jaw: 'mouthOpen',
+} as const satisfies Record<PoseCorrectionAxis, PoseCorrectionAxisV7>
+
+const AXES_BY_V7_KEY: Readonly<Record<string, PoseCorrectionAxis>> = Object.fromEntries(
+  Object.entries(V7_AXES).map(([axis, key]) => [key, axis as PoseCorrectionAxis]),
+)
+
+/** Corrections with their `at` keys renamed, each kept in its place. */
+function renameAxes<From extends string, To extends string>(
+  corrections: readonly PoseCorrection<From>[],
+  names: Readonly<Record<string, string>>,
+): PoseCorrection<To>[] {
+  return corrections.map(correction => ({
+    ...correction,
+    at: Object.fromEntries(Object.entries(correction.at).map(([key, value]) => [Object.hasOwn(names, key) ? names[key]! : key, value])) as PoseCorrection<To>['at'],
+  }))
+}
+
+/** A version 7 package's corrections in the axes the runtime reads. */
+export function poseCorrectionsFromV7(corrections: readonly PoseCorrectionV7[]): PoseCorrection[] {
+  return renameAxes(corrections, AXES_BY_V7_KEY)
+}
+
+/** Corrections as a package of version 7 writes them. */
+export function poseCorrectionsToV7(corrections: readonly PoseCorrection[]): PoseCorrectionV7[] {
+  return renameAxes(corrections, V7_AXES)
+}
 
 export function poseCorrectionCornerKey(correction: Pick<PoseCorrection, 'surface' | 'at'>): string {
   return `${correction.surface}:${AXES.filter(k => correction.at[k] !== undefined).map(k => `${k}:${Math.sign(correction.at[k]!)}`).join(',')}`
 }
 
-/** One corner per axis/sign combination. Neighbouring corners do not add twice. */
+/**
+ * Whether `value` is a list of corrections keyed by PoseCorrectionAxis. One corner per axis/sign combination;
+ * neighbouring corners do not add twice.
+ */
 export function isPoseCorrections(value: unknown): value is PoseCorrection[] {
-  if (!Array.isArray(value) || value.length > 16) return false
+  return Array.isArray(value) && arePoseCorrections(value, AXES)
+}
+
+/** Whether `value` is a list of corrections as a package of version 7 writes them. */
+export function isPoseCorrectionsV7(value: unknown): value is PoseCorrectionV7[] {
+  return Array.isArray(value) &&
+    everyItem(value, item => Boolean(item) && typeof item === 'object' && isAxisRecord((item as PoseCorrection<string>).at, AXES_BY_V7_KEY)) &&
+    isPoseCorrections(poseCorrectionsFromV7(value as PoseCorrectionV7[]))
+}
+
+/** Keyed only by `names`' keys, so that renaming leaves no two on one axis and none unnamed. */
+function isAxisRecord(at: unknown, names: Readonly<Record<string, string>>): boolean {
+  return Boolean(at) && typeof at === 'object' && !Array.isArray(at) && Object.keys(at as object).every(key => Object.hasOwn(names, key))
+}
+
+function arePoseCorrections(value: readonly unknown[], axes: readonly string[]): boolean {
+  if (value.length > 16) return false
   const corners = new Set<string>()
   return everyItem(value, (item) => {
     const correction = item as PoseCorrection
@@ -61,23 +114,14 @@ export function isPoseCorrections(value: unknown): value is PoseCorrection[] {
     ) {
       return false
     }
-    const keys = Object.keys(correction.at)
+    const at = correction.at as Record<string, unknown>
+    const keys = Object.keys(at)
+    if (keys.length < 2 || keys.length > 3 || !keys.some(k => HEAD_AXES.has(k))) return false
     if (
-      keys.length < 2 ||
-      keys.length > 3 ||
-      !keys.some((k) => k === 'angleX' || k === 'angleY')
-    ) {
-      return false
-    }
-    if (
-      !keys.every(
-        (k) =>
-          AXES.includes(k as PoseCorrectionAxis) &&
-          finite(correction.at[k as PoseCorrectionAxis], -1, 1) &&
-          (k === 'angleX' || k === 'angleY'
-            ? Math.abs(correction.at[k as PoseCorrectionAxis]!) >= 0.05
-            : correction.at[k as PoseCorrectionAxis]! >= 0.05),
-      )
+      !keys.every(k =>
+        axes.includes(k) &&
+        finite(at[k], -1, 1) &&
+        (HEAD_AXES.has(k) ? Math.abs(at[k]) >= 0.05 : at[k] >= 0.05))
     ) {
       return false
     }
@@ -156,13 +200,6 @@ export type PoseCorrectionDriver = Pick<
   'headYaw' | 'headPitch' | 'lidL' | 'lidR' | 'jaw'
 >
 
-/** The driver field an axis reads as it stands; the eye-close axes read a lid's complement. */
-const AXIS_DRIVER_FIELDS = {
-  angleX: 'headYaw',
-  angleY: 'headPitch',
-  mouthOpen: 'jaw',
-} as const satisfies Record<Exclude<PoseCorrectionAxis, 'eyeCloseL' | 'eyeCloseR'>, keyof PoseCorrectionDriver>
-
 /** How much of a corner a pose holds: each axis eased in on its way to the corner. */
 export function poseCorrectionWeight(
   axes: ReadonlyArray<readonly [PoseCorrectionAxis, number]>,
@@ -171,11 +208,11 @@ export function poseCorrectionWeight(
   let weight = 1
   for (const [axis, target] of axes) {
     const value =
-      axis === 'eyeCloseL'
+      axis === 'lidCloseL'
         ? 1 - driver.lidL
-        : axis === 'eyeCloseR'
+        : axis === 'lidCloseR'
           ? 1 - driver.lidR
-          : driver[AXIS_DRIVER_FIELDS[axis]]
+          : driver[axis]
     const t = Math.max(0, Math.min(1, value / target))
     weight *= t * t * (3 - 2 * t)
   }

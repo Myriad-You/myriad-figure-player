@@ -6,6 +6,10 @@ import { formatTemplate } from './rig/formatTemplate'
  */
 export const FIGURE_ERROR_TEXT = {
   anime25dPlaybackFailed: '2.5D motion could not play.',
+  anime25dPoseVersion: 'This pose is of version {version}; this player reads versions {read}.',
+  anime25dPlaybackInvalid: 'This figure package is malformed at {field}.',
+  anime25dPlaybackUnconvertible: 'This figure package cannot be written as version {version} without losing {field}.',
+  anime25dPlaybackVersion: 'This figure package is of version {version}; this player reads versions {read}.',
   anime25dWebglFailed: 'This browser does not support WebGL2, so 2.5D motion cannot play.',
 } as const
 
