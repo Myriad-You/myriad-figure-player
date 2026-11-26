@@ -130,7 +130,8 @@ const has = (value: unknown, like: object): boolean => record(value) && Object.k
 /** Whether a pose is of this figure, whole: every layer, vertex and arm it is drawn with. Anything may be asked. */
 export function poseFits(figure: PoseFigure, key: string, pose: Readonly<Anime25DPose>): boolean {
   const { layers, collarClip } = figure
-  if (!record(pose) || pose.version !== POSE_VERSION || pose.figure !== key) return false
+  // A pose of version 1 held as it was made differs only in its driver's keys, which drawing does not read.
+  if (!record(pose) || (pose.version !== POSE_VERSION && pose.version !== 1) || pose.figure !== key) return false
   if (!(pose.order instanceof Uint16Array) || pose.order.length !== layers.length || new Set(pose.order).size !== layers.length || pose.order.some(at => at >= layers.length)) return false
   if (!has(pose.frame, FRAME) || (pose.frame.bodyLift !== undefined && !liftFits(pose.frame.bodyLift))) return false
   if (!each(pose.layers, layers.length, (own, i) => layerFits(layers[i]!, own))) return false

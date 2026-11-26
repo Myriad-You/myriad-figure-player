@@ -392,7 +392,7 @@ export interface Anime25DCredit {
 export interface Anime25DPlayback extends Anime25DPlaybackContent<PoseCorrection> {
   kind: typeof ANIME25D_PLAYBACK_CURRENT_KIND
   version: typeof ANIME25D_PLAYBACK_CURRENT_VERSION
-  credits?: Anime25DCredit[]
+  credits: Anime25DCredit[]
 }
 
 /** A package of version 7: its identity names the reference project, and its pose-correction axes have their old keys. */
@@ -465,7 +465,7 @@ export function isAnime25DPlayback(value: unknown): value is Anime25DPlaybackDoc
         isPlaybackContent(record, isPoseCorrectionsV7)
     case ANIME25D_PLAYBACK_CURRENT_VERSION:
       return record.kind === ANIME25D_PLAYBACK_CURRENT_KIND &&
-        (record.credits === undefined || isCredits(record.credits)) &&
+        isCredits(record.credits) &&
         isPlaybackContent(record, isPoseCorrections)
     default:
       return false

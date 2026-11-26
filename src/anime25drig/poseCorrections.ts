@@ -58,7 +58,7 @@ function renameAxes<From extends string, To extends string>(
 ): PoseCorrection<To>[] {
   return corrections.map(correction => ({
     ...correction,
-    at: Object.fromEntries(Object.entries(correction.at).map(([key, value]) => [names[key] ?? key, value])) as PoseCorrection<To>['at'],
+    at: Object.fromEntries(Object.entries(correction.at).map(([key, value]) => [Object.hasOwn(names, key) ? names[key]! : key, value])) as PoseCorrection<To>['at'],
   }))
 }
 

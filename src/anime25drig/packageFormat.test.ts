@@ -1,9 +1,10 @@
 import type { Anime25DPlayback, Anime25DPlaybackV7 } from './types'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { FigureError } from '../errors'
 import { ANIME25D_COPYRIGHT, ANIME25D_LICENSE, ANIME25D_PROJECT_NAME, ANIME25D_PROJECT_URL } from './credit'
-import { readAnime25DPlayback, writeAnime25DPlayback } from './packageFormat'
+import { readAnime25DPlayback, V7_CREDITS_CARRIED, writeAnime25DPlayback } from './packageFormat'
 import { isAnime25DPlayback } from './types'
 
 const MATERIALS = ['mouthClose', 'mouthOpen', 'mouthWide', 'mouthRound', 'mouthNarrow', 'mouthManiac'] as const
@@ -117,11 +118,119 @@ test('a package of version 7 read and written as version 7 again is the same, by
   assert.deepEqual(readAnime25DPlayback(bare).credits, [{ name: ANIME25D_PROJECT_NAME }])
 })
 
-test('a field of the other version\'s identity is not carried across', () => {
-  const v7 = { ...packageV7(), credits: [{ name: 'other' }] }
-  assert.deepEqual(readAnime25DPlayback(v7), packageV8())
-  const v8 = { ...packageV8(), engine: 'other', engineUrl: 'other' }
-  assert.equal(JSON.stringify(writeAnime25DPlayback(v8, 7)), JSON.stringify(packageV7()))
+/** `value` with every object's keys in sorted order, as a server keeps a package. */
+function sortedKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortedKeys)
+  if (value === null || typeof value !== 'object') return value
+  return Object.fromEntries(Object.keys(value).toSorted().map(key => [key, sortedKeys((value as Record<string, unknown>)[key])]))
+}
+
+test('a package kept with sorted keys reads and writes back to the same value; its identity moves to where kind was', () => {
+  const stored = sortedKeys(packageV7()) as Anime25DPlaybackV7
+  const again = writeAnime25DPlayback(readAnime25DPlayback(stored), 7)
+  assert.deepEqual(again, stored)
+  assert.equal(JSON.stringify(sortedKeys(again)), JSON.stringify(stored), 'the same once its keys are sorted again')
+  assert.notEqual(JSON.stringify(again), JSON.stringify(stored), 'not the same bytes as they stand')
+})
+
+test('a version 7 package\'s own credits field is carried, and is credits again in version 7', () => {
+  const v7 = { ...packageV7(), credits: [{ name: 'other' }] } as unknown as Anime25DPlaybackV7
+  const held = readAnime25DPlayback(v7) as unknown as Record<string, unknown>
+  assert.deepEqual(held.credits, packageV8().credits)
+  assert.deepEqual(held[V7_CREDITS_CARRIED], [{ name: 'other' }])
+  assert.equal(JSON.stringify(writeAnime25DPlayback(held as never, 7)), JSON.stringify(v7))
+  assert.throws(() => readAnime25DPlayback({ ...v7, [V7_CREDITS_CARRIED]: [] } as never), unconvertible(8, V7_CREDITS_CARRIED))
+})
+
+test('credits version 7 cannot hold fail the conversion to version 7 instead of being dropped', () => {
+  const credit = packageV8().credits[0]!
+  const cases: Array<[string, Record<string, unknown>]> = [
+    ['credits', { credits: [credit, { name: 'Painter' }] }],
+    ['credits', { credits: [{ ...credit, name: 'Painter' }] }],
+    ['credits', { credits: [] }],
+    ['credits.0.note', { credits: [{ ...credit, note: 'x' }] }],
+    ['engine', { engine: 'other' }],
+    ['engineUrl', { engineUrl: 'other' }],
+    ['license', { license: 'other' }],
+    ['copyright', { copyright: 'other' }],
+  ]
+  for (const [field, change] of cases) {
+    assert.throws(() => writeAnime25DPlayback({ ...packageV8(), ...change } as never, 7), unconvertible(7, field), field)
+  }
+})
+
+test('a version 7 package not shaped as its conversion needs fails with the format\'s error, not a TypeError', () => {
+  const v7 = packageV7() as unknown as Record<string, any>
+  const cases: Array<[string, unknown]> = [
+    ['package', null],
+    ['package', [v7]],
+    ['engine', { ...v7, engine: 7 }],
+    ['copyright', { ...v7, copyright: null }],
+    ['shellProfile', { ...v7, shellProfile: null }],
+    ['shellProfile.poseCorrections', { ...v7, shellProfile: { ...v7.shellProfile, poseCorrections: null } }],
+    ['shellProfile.poseCorrections.1.at', { ...v7, shellProfile: { ...v7.shellProfile, poseCorrections: [v7.shellProfile.poseCorrections[0], null] } }],
+    ['shellProfile.poseCorrections.0.at', { ...v7, shellProfile: { ...v7.shellProfile, poseCorrections: [{ surface: 'head', patches: [] }] } }],
+  ]
+  for (const [field, document] of cases) {
+    assert.throws(() => readAnime25DPlayback(document as never), (error: unknown) =>
+      error instanceof FigureError && error.code === 'anime25dPlaybackInvalid' && error.params.field === field, field)
+  }
+  const { kind: _kind, ...kindless } = v7
+  const held = readAnime25DPlayback(kindless as never)
+  assert.deepEqual(Object.keys(held).slice(0, 3), ['kind', 'version', 'credits'], 'with no kind, its identity comes first')
+  assert.equal(held.kind, 'myriad-figure')
+})
+
+test('an axis key that names something every object has is kept as it is', () => {
+  const v7 = packageV7() as unknown as Record<string, any>
+  const odd = { ...v7, shellProfile: { ...v7.shellProfile, poseCorrections: [{ surface: 'head', at: { toString: 0.5, angleX: 0.8 }, patches: PATCHES }] } }
+  const held = readAnime25DPlayback(odd as never)
+  assert.deepEqual(held.shellProfile.poseCorrections![0]!.at, { toString: 0.5, headYaw: 0.8 })
+})
+
+test('credits are bounded: 1 to 16, names and texts at most 512 UTF-16 code units, texts strings when given', () => {
+  const v8 = packageV8() as unknown as Record<string, unknown>
+  const with_ = (credits: unknown) => isAnime25DPlayback({ ...v8, credits })
+  assert.equal(with_(Array.from({ length: 16 }, () => ({ name: 'a' }))), true)
+  assert.equal(with_(Array.from({ length: 17 }, () => ({ name: 'a' }))), false)
+  assert.equal(with_([{ name: 'x'.repeat(512), url: 'x'.repeat(512), license: 'x'.repeat(512), copyright: 'x'.repeat(512) }]), true)
+  for (const field of ['name', 'url', 'license', 'copyright']) assert.equal(with_([{ name: 'a', [field]: 'x'.repeat(513) }]), false, field)
+  for (const field of ['url', 'license', 'copyright']) assert.equal(with_([{ name: 'a', [field]: null }]), false, field)
+  assert.equal(with_([{ name: null }]), false)
+  assert.equal(with_([null]), false)
+  assert.equal(with_([]), false)
+  assert.equal(with_(undefined), false)
+})
+
+interface Vectors {
+  packages: Record<string, unknown>
+  cases: Array<{ name: string, package: string, set?: Array<[string, unknown]>, remove?: string[], valid: boolean }>
+}
+
+/** "FLOAT:<literal>" is that JSON number literal; once parsed, it is the number. */
+const vectorValue = (value: unknown) => typeof value === 'string' && value.startsWith('FLOAT:') ? JSON.parse(value.slice(6)) as unknown : value
+
+test('agrees with every validator of the package on the shared cases', () => {
+  // A byte-for-byte copy of the server core's crates/conformance/v1/figure/package.json.
+  const vectors = JSON.parse(readFileSync(new URL('../../contracts/figure_package_conformance.json', import.meta.url), 'utf8')) as Vectors
+  assert.ok(vectors.cases.length > 0)
+  for (const { name, package: from, set = [], remove = [], valid } of vectors.cases) {
+    const document = structuredClone(vectors.packages[from]) as Record<string, any>
+    const parent = (pointer: string): [Record<string, any>, string] => {
+      const path = pointer.split('/').slice(1)
+      const key = path.pop()!
+      return [path.reduce((at, step) => at[step], document), key]
+    }
+    for (const [pointer, value] of set) {
+      const [at, key] = parent(pointer)
+      at[key] = vectorValue(value)
+    }
+    for (const pointer of remove) {
+      const [at, key] = parent(pointer)
+      delete at[key]
+    }
+    assert.equal(isAnime25DPlayback(document), valid, name)
+  }
 })
 
 test('the version says which identity and which axis keys a package has', () => {
@@ -140,9 +249,14 @@ test('the version says which identity and which axis keys a package has', () => 
     ['credits that are not a list', { ...v8, credits: { name: ANIME25D_PROJECT_NAME } }],
   ]
   for (const [name, variant] of variants) assert.equal(isAnime25DPlayback(variant), false, name)
-  assert.equal(isAnime25DPlayback({ ...v8, credits: undefined }), true, 'credits are optional')
+  assert.equal(isAnime25DPlayback({ ...v8, credits: undefined }), false, 'credits are required')
   assert.equal(isAnime25DPlayback({ ...v8, engine: ANIME25D_PROJECT_NAME }), true, 'a field version 8 does not have is not read')
 })
+
+function unconvertible(version: number, field: string) {
+  return (error: unknown) => error instanceof FigureError && error.code === 'anime25dPlaybackUnconvertible' &&
+    error.params.version === version && error.params.field === field
+}
 
 test('a package of a version this player does not read is refused by name', () => {
   for (const version of [6, 9, '8']) {

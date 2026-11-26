@@ -224,13 +224,20 @@ function isPartProfile(value: unknown): value is Anime25DPartProfile {
       isShare(part.weight))
 }
 
-/** The works a package credits: a name each, and what its licence asks to be kept. */
+/**
+ * The works a package credits, at least one: a name each, and what its licence asks to be kept. Lengths are in UTF-16
+ * code units; a name is not blank when some character in it is neither Unicode White_Space nor U+FEFF (the server's
+ * validator counts and reads them the same way).
+ */
 export function isCredits(value: unknown): value is Anime25DCredit[] {
-  return Array.isArray(value) && value.length <= MAX_CREDITS && everyItem(value, credit =>
+  return Array.isArray(value) && value.length > 0 && value.length <= MAX_CREDITS && everyItem(value, credit =>
     isRecord(credit) &&
-    isText(credit.name, MAX_NAME) &&
+    typeof credit.name === 'string' && CONTENT.test(credit.name) && credit.name.length <= MAX_NAME &&
     [credit.url, credit.license, credit.copyright].every(field => field === undefined || (typeof field === 'string' && field.length <= MAX_NAME)))
 }
+
+/** A character that is neither Unicode White_Space nor U+FEFF. */
+const CONTENT = /[^\p{White_Space}\uFEFF]/u
 
 export function isEnhancement(value: unknown): value is Anime25DEnhancement {
   return isRecord(value) &&

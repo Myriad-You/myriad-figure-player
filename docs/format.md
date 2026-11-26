@@ -46,10 +46,71 @@ What the reference player checks:
 - `isAnime25DPlayback(value)` (`src/anime25drig/types.ts`) validates a whole playback document of any version the player
   reads. It returns a boolean and never throws. It checks every rule marked as a bound or invariant in §4–§6.
 - The stage (`Anime25DStage`, and `FigurePlayer`, which wraps it) does **not** validate. It converts the playback to
-  the form it holds internally by version (`readAnime25DPlayback`, `src/anime25drig/packageFormat.ts`), and throws for
-  a version it does not read (§3). A host must call `isAnime25DPlayback` before it hands a package to the stage. A
-  package that fails it may crash the stage or draw wrongly.
+  the form it holds internally by version (`readAnime25DPlayback`, `src/anime25drig/packageFormat.ts`). The conversion
+  throws a `FigureError` for a version it does not read (`anime25dPlaybackVersion`, §3.2) and for a version 7 package
+  not shaped as the conversion needs (`anime25dPlaybackInvalid`, §3.4), never a bare `TypeError`. A host must call
+  `isAnime25DPlayback` before it hands a package to the stage. A package that fails it may crash the stage or draw
+  wrongly.
 - The player does not validate the rig manifest or the atlas image. Pose JSON is checked when it is drawn (§9).
+- The server that stores packages validates only a subset (§1.2).
+
+### 1.1 How the parts travel, and what they are written in
+
+- Every JSON document of the format is UTF-8 text without a byte-order mark, as JSON (RFC 8259) requires for
+  exchange. Object keys must be unique within an object; a document with a duplicate key is not a package of this
+  format, and a reader may refuse it or keep either value (`JSON.parse` keeps the last). Writers never write one.
+- On the server, a package is a directory named by its id (§1.3) holding two files: `atlas.png` (§7) and
+  `manifest.json`, the rig manifest (§8) with the playback in its `anime25dPlayback` field and the atlas URL in
+  `textures[0].url`. A host fetches the manifest, takes `anime25dPlayback` from it, and loads the atlas from that URL.
+  The player needs the playback and the atlas URL; the manifest is optional to it (§8).
+- Size limits: the playback's own bounds are in §5 (canvas at most 8192 a side, at most 128 layers, the mesh and
+  outline limits of §5.12). The atlas is 256 to 8192 pixels on each side as the server stores it (§7). The format
+  sets no limit on a document's size in bytes; hosts may set their own.
+
+### 1.2 What the server validates
+
+The server (`myriad-core`'s `anime25d_contract.rs`, called when a package is imported or rewritten) checks less than
+a reader:
+
+- identity and versions: `kind`, `version`, `engine` (version 7), `credits` (version 8), all as §4;
+- `pixelCanvas` width and height positive and finite; `layers` a non-empty array; `anchors` an object;
+- `mouthProfile`, `chestProfile` and `shellProfile` with every bound of §5.5–§5.7, and pose corrections as §6.
+
+It does not check the layers, anchors, arm models, turn keyforms, `enhancement`, `partProfile`, `figureStance`, nor
+version 7's `engineUrl`, `license` and `copyright` beyond their presence. A package the server accepts may still fail
+`isAnime25DPlayback`; a reader must validate what it reads. The rules both check are pinned by one set of accept and
+reject cases, `contracts/figure_package_conformance.json` (a copy of the server core's
+`crates/conformance/v1/figure/package.json`), which both test suites run.
+
+### 1.3 The package id
+
+A stored package is named by its id: SHA-256, as 64 lowercase hex digits, over these bytes in order
+(`rig_package_id` in the server core's `myriad-persona-sync`):
+
+1. the ASCII bytes `myriad-rig-package-v1` and one zero byte;
+2. the atlas file's length in bytes, as an unsigned 64-bit big-endian integer, then the atlas file's bytes;
+3. the canonical manifest's length in bytes, the same way, then the canonical manifest.
+
+The canonical manifest is the manifest as the server reads it (only the fields of §8; any other top-level field of
+the manifest is not kept), with every `textures[i].url` replaced by `asset://atlas/` followed by that texture's `id`,
+written as canonical JSON (`myriad-canonical`):
+
+- no whitespace anywhere;
+- object keys in the byte order of their UTF-8, at every depth (the playback inside included);
+- strings escaped as serde_json escapes them: `"` and `\` and the control characters U+0000–U+001F escaped
+  (`\b \f \n \r \t` by those names, the rest as `\u00XX` with lowercase hex), every other character (`/` and U+007F
+  included) as its UTF-8;
+- `null`, `true`, `false` as such;
+- a number whose literal was an integer (no fraction, no exponent; within 64-bit integers) as its decimal digits, with
+  `-` if negative; any other number as the shortest digits that read back to the same 64-bit float (serde_json's
+  writer, `ryu`): when 1e-5 ≤ |x| < 1e16, or x is zero, as a plain decimal with at least one digit after the point
+  (`0.0`, `-0.0`, `1.0`, `8.0` for a literal `80e-1`, `0.00001`, `1000000000000000.0`); otherwise as digits, `e`, a
+  sign and the exponent, with a point only when there is more than one digit (`1e+16`, `1.2345678901234568e+20`,
+  `1e-6`).
+
+So the id depends on the values and on whether each number was written as an integer or not, never on the order of
+keys or on whitespace. A reader that does not keep that distinction (JavaScript's `JSON.parse` does not) cannot
+reproduce the id from what it parsed; it should keep the stored bytes when the id matters.
 
 ## 2. Conventions
 
@@ -74,7 +135,8 @@ and `lidR`, and to arm sides. It is not the figure's own left.
 
 ### 2.3 Numbers
 
-- Every number is a JSON number. JSON has no NaN or Infinity, so every number in a document is finite.
+- Every number is a JSON number. JSON has no NaN or Infinity, so every number in a playback document is finite. (Pose
+  JSON writes non-finite numbers and −0 in a form of its own, §9.2.)
 - Readers that validate objects already in memory should note that the reference validator's `isBetween` does not test
   for NaN separately. NaN still fails every bound, because every comparison with NaN is false. Infinity fails every
   bound because every bound is finite. Several other checks (`numberInRange` in `types.ts`, `finite` in
@@ -95,7 +157,7 @@ The validator (`src/anime25drig/playbackValidation.ts`) uses these kinds through
 | share | number in [0, 1] |
 | along | number in [0, 4]. A place along a forearm: 0 the elbow, 1 the wrist, more than 1 past the wrist. |
 | level | number in [0, 255] (a colour channel) |
-| text(n) | a string that is not empty or whitespace after trimming, with `length` ≤ n. Length counts UTF-16 code units. |
+| text(n) | a string, with `length` ≤ n in UTF-16 code units, that is not empty once ECMAScript's `trim()` has removed its leading and trailing WhiteSpace and LineTerminator characters (U+0009, U+000B, U+000C, U+0020, U+00A0, U+FEFF, the Zs characters, U+000A, U+000D, U+2028, U+2029). Used for the fields only a reader checks; a credit's `name` has its own rule (§4.2). |
 | point(x, y) | an object whose two named members are coordinates |
 | box | an object with `x0`, `y0`, `x1`, `y1` coordinates, `x1 ≥ x0` and `y1 ≥ y0`. The edges are the first and last pixels of what the box bounds, so a line one pixel thick has `y0 = y1`. |
 | record | a non-null object that is not an array |
@@ -108,8 +170,8 @@ A reader ignores every field that the package's version does not define, at any 
 accepts such fields. For example, a version 8 package carrying a stray `engine` field passes.
 
 A writer must not put meaning into undefined fields. A later version may define the same name with another meaning
-(§3). Converting between versions (§3.4) carries undefined fields unchanged, except those that name an identity field
-of either version, which it drops.
+(§3). Converting between versions (§3.4) carries undefined fields unchanged; where one would collide with a field the
+other version defines, it is moved or the conversion fails (§3.4), never dropped.
 
 ### 2.6 Absent and `null`
 
@@ -124,9 +186,13 @@ writer should write `null`, which is what the type declares.
 
 ### 3.1 The version field selects the rules
 
-The top-level `version` field of the playback is the only thing that says which rules apply. It must be a JSON number,
-so the string `"7"` is not version 7. A reader decides the version from this field alone and never guesses it from
-which keys are present.
+The top-level `version` field of the playback is the only thing that says which rules apply. A reader decides the
+version from this field alone and never guesses it from which keys are present.
+
+A version (this one and the sub-block versions of §3.3) is a JSON number whose value is a non-negative integer. It is
+read by its value, however the literal is written: `8`, `8.0` and `80e-1` are all version 8. A string (`"8"`), a
+fraction (`8.5`), `null` or a missing field is no version, and the package is refused. Writers write versions as
+integer literals.
 
 Versions defined by this document:
 
@@ -179,23 +245,29 @@ A package with any other value fails validation.
 
 The conversion between 7 and 8 does this:
 
-- The identity fields (§4) are replaced by the other version's identity. The replacement is written where `kind` was,
-  in the order `kind`, `version`, then the rest of the identity. The other identity fields are dropped wherever they
-  were.
+- The identity fields (§4) are replaced by the other version's identity (mapped as §4.3). The new identity is written
+  where `kind` was, in the order `kind`, `version`, then the rest of that version's identity; with no `kind`, it comes
+  first. The source version's other identity fields are removed wherever they were.
 - The `at` keys of every pose correction are renamed (§6.3). Each key keeps its place within `at`. Everything else in
   `shellProfile` keeps its place.
-- Every other field is the same value, in the same place.
+- Every other field is the same value, in the same place. Nothing is dropped:
+  - a version 7 document's own `credits` field (version 7 does not define it) is carried in the current form as
+    `credits@7`, and written back as `credits` in version 7; a version 7 document that already has a `credits@7`
+    cannot be read (`anime25dPlaybackUnconvertible`);
+  - writing version 7 fails (`anime25dPlaybackUnconvertible`, params `version` 7 and `field`) when the package has
+    `engine`, `engineUrl`, `license` or `copyright` fields of its own, or credits version 7 cannot hold (§4.3).
+- Reading version 7 fails with `anime25dPlaybackInvalid` (param `field`, the path of what is wrong) when the document is
+  not an object, its `engine` is not a string, its `engineUrl`, `license` or `copyright` is present but not a string,
+  its `shellProfile` is not an object, its `poseCorrections` is present but not an array, or a correction or its `at`
+  is not an object. Nothing else is checked; that is `isAnime25DPlayback`'s.
 
-So version 7 → 8 → 7 gives the same JSON, byte for byte, for a version 7 document laid out as the reference writer lays
-it out: `kind`, `version`, `engine`, then whichever of `engineUrl`, `license`, `copyright` are present, in that order,
-before any other field.
+So version 7 → 8 → 7 gives the same value: every key with the same value, and a JavaScript reader's `JSON.stringify`
+of it the same text when the version 7 document had its identity first (`kind`, `version`, `engine`, then whichever of
+`engineUrl`, `license`, `copyright` are present), as the reference writer lays it out. A document with its keys in
+another order (the server's store keeps keys sorted, §1.3) comes back with its identity where `kind` was, so the same
+value in a different key order. The package id (§1.3) does not depend on key order.
 
 Converting version 8 → 8 returns the document itself.
-
-The identity fields of both versions (`kind`, `version`, `engine`, `engineUrl`, `license`, `copyright`, `credits`) are
-dropped from the document converted, wherever they are, before the new identity is written: a stray `credits` in a
-version 7 document, or a stray `engine` in a version 8 one, does not survive conversion. Writers must still not put the
-other version's identity keys in a package.
 
 ---
 
@@ -206,44 +278,59 @@ other version's identity keys in a package.
 | Field | Type | Required | Rule |
 |---|---|---|---|
 | `kind` | string | yes | exactly `"anime-2.5d-rig"` |
-| `version` | number | yes | exactly `7` |
+| `version` | number | yes | 7 (§3.1) |
 | `engine` | string | yes | exactly `"Anime2.5DRig"` |
 | `engineUrl` | string | no | `length` ≤ 512. May be empty. |
 | `license` | string | no | `length` ≤ 512. May be empty. |
 | `copyright` | string | no | `length` ≤ 512. May be empty. |
 
 These fields credit the reference project as its MIT licence requires. That requirement is why they are kept.
-Version 7 is frozen. The reference writer persists `engineUrl`, `license` and `copyright` from the constants
-`ANIME25D_PROJECT_URL`, `ANIME25D_LICENSE` and `ANIME25D_COPYRIGHT` in `src/anime25drig/credit.ts`.
+Version 7 is frozen. The reference writer persists them as these literals (`src/anime25drig/credit.ts`):
+
+| Field | Value |
+|---|---|
+| `engine` | `Anime2.5DRig` |
+| `engineUrl` | `https://github.com/852wa/Anime2.5DRig` |
+| `license` | `MIT` |
+| `copyright` | `Copyright (c) 2026 hakoniwa` |
+
+The server does not check `engineUrl`, `license` or `copyright` (§1.2); a reader does.
 
 ### 4.2 Version 8
 
 | Field | Type | Required | Rule |
 |---|---|---|---|
 | `kind` | string | yes | exactly `"myriad-figure"` |
-| `version` | number | yes | exactly `8` |
-| `credits` | array of credit | no | at most 16 entries |
+| `version` | number | yes | 8 (§3.1) |
+| `credits` | array of credit | yes | 1 to 16 entries |
 
 A **credit** is a record:
 
 | Field | Type | Required | Rule |
 |---|---|---|---|
-| `name` | string | yes | text(512): not blank |
-| `url` | string | no | `length` ≤ 512. May be empty. |
-| `license` | string | no | `length` ≤ 512. May be empty. |
-| `copyright` | string | no | `length` ≤ 512. May be empty. |
+| `name` | string | yes | at most 512 UTF-16 code units; not blank |
+| `url` | string | no | at most 512 UTF-16 code units. May be empty. |
+| `license` | string | no | at most 512 UTF-16 code units. May be empty. |
+| `copyright` | string | no | at most 512 UTF-16 code units. May be empty. |
 
-`credits` lists the works the package is made with. For each work it keeps what that work's licence requires a copy
+Lengths count UTF-16 code units (a character outside the Basic Multilingual Plane counts 2). A `name` is **not blank**
+when at least one of its characters is neither Unicode `White_Space` nor U+FEFF; so `"\u0085"`, `"\uFEFF"` and
+`"\u00A0\u3000"` are blank, and `"\u200B"` is not. A present `url`, `license` or `copyright` must be a string; `null`
+is refused.
+
+`credits` is required, so the attribution travels with every package of version 8. It lists the works the package is made with. For each work it keeps what that work's licence requires a copy
 to keep. For a work under the MIT licence, that is the copyright notice and the licence. `license` holds the licence's
 name.
 
 A writer of version 8 credits the reference project in `credits`, one entry whose `name` is `"Anime2.5DRig"` and
-whose `url`, `license` and `copyright` are the values of §4.1.
+whose `url`, `license` and `copyright` are the literals of §4.1.
 
 `engine`, `engineUrl` and the top-level `license` and `copyright` are not part of version 8. A reader of version 8
 ignores them (§2.5).
 
 ### 4.3 Mapping
+
+Reading version 7 (version 7 → 8):
 
 | Version 7 | Version 8 |
 |---|---|
@@ -252,12 +339,21 @@ ignores them (§2.5).
 | `license` | `credits[0].license` |
 | `copyright` | `credits[0].copyright` |
 
-- **Reading version 7** gives `credits` with one entry. A version 7 field that is absent leaves the matching credit
-  field absent.
-- **Writing version 7** takes the first credit whose `name` is `"Anime2.5DRig"` and writes its `url`, `license` and
-  `copyright` as `engineUrl`, `license` and `copyright`, leaving out those that are absent. `engine` is always written
-  as `"Anime2.5DRig"`. If no credit has that name, only `engine` is written. Version 7 has no place for any other
-  credit, so other credits are lost.
+`credits` has exactly that one entry. A version 7 field that is absent leaves the matching credit field absent.
+
+Writing version 7 (version 8 → 7):
+
+| Version 8 | Version 7 |
+|---|---|
+| `credits[0].name`, which must be `"Anime2.5DRig"` | `engine` |
+| `credits[0].url` | `engineUrl` |
+| `credits[0].license` | `license` |
+| `credits[0].copyright` | `copyright` |
+
+Version 7 holds exactly one credit, the reference project's. A package whose `credits` is not exactly one entry named
+`"Anime2.5DRig"` with no fields besides `name`, `url`, `license` and `copyright` cannot be written in version 7: the
+conversion fails with `anime25dPlaybackUnconvertible` (`field`: `credits`, or `credits.0.<field>`) rather than drop a
+credit. Absent credit fields are left out.
 
 ---
 
@@ -334,7 +430,9 @@ Meaning of each field:
 - **`name`**: the layer's name as drawn, usually the name of the layer in the source drawing. When `role` is
   `"unknown"`, the role is resolved from the name (§5.3.1). `partProfile` refers to layers by name (§5.10). The
   reference player gives the names `part:<index>:<part name>` to pieces it cuts out of layers itself. A package layer
-  should not use a name of that form, because it would be taken for that part.
+  should not use a name of that form, because it would be taken for that part. Names should be unique within
+  `layers`: the validator does not require it, but where the player looks a layer up by name (`partProfile`, a gesture
+  arm's hand) it takes the first layer, in array order, with that name.
 - **`role`**: what the layer depicts (§5.3.1). Most of the runtime's behaviour is chosen by role.
 - **`z`**: the layer's place in the original drawing's stacking order. It does not reorder drawing (§5.2). The
   player uses it where it compares two layers' stacking, for example whether a head ornament lies over the front hair,
@@ -359,9 +457,12 @@ Meaning of each field:
 - **`atlas`**: where the layer's picture is in the atlas image (§5.3.3).
 - **`strands`**: the hair strands of a hair lock (§5.3.4).
 - **`synthetic`**: the layer was drawn by the import tool, not by the artist, and the runtime may redraw it. The
-  reference player uses this for the speaking mouth. It draws the open, wide, round and narrow mouths live when every
-  layer present with those fades (`mouthOpen`, `mouthWide`, `mouthRound`, `mouthNarrow`) is synthetic, and a
-  `mouthOpen` layer and a readable `mouthClose` layer exist.
+  reference player uses this for the speaking mouth. For each of the fades `mouthOpen`, `mouthWide`, `mouthRound` and
+  `mouthNarrow` it looks at the first layer (in array order) with that fade; it draws those mouths live when there is
+  a `mouthOpen` layer, each of those first layers that exists is synthetic, and the first `mouthClose` layer's pixels
+  can be read. Later layers with the same fade are not looked at. (This is how the reference player has always
+  decided it; changing it to every layer would change how existing packages with a second, drawn mouth play, so the
+  format states the rule as it is. A writer gives each mouth fade one layer.)
 - **`armVariant`**: present on a gesture-arm layer (§5.3.5).
 
 #### 5.3.1 Roles and their resolution
@@ -436,8 +537,10 @@ works as follows:
 
 1. **Role.** If `role` is `"unknown"`, the name is normalised:
    1. Unicode NFKC, trimmed, lower-cased.
-   2. A trailing ` copy`, ` copy N` or `のコピー` (optionally followed by a number) is removed.
-   3. Runs of spaces and underscores become `-`, and repeated `-` collapse to one.
+   2. A trailing `copy` or `のコピー`, optionally followed by whitespace and digits, is removed together with any
+      whitespace before it (the regular expression `\s*(?:のコピー|copy)(?:\s*\d+)?$`, Unicode-aware). No space is
+      needed before it: `hair copy 2`, `haircopy` and `hairのコピー3` all become `hair`.
+   3. Runs of whitespace (any Unicode whitespace, `\s`) and underscores become `-`, and repeated `-` collapse to one.
    4. `eyelash-c` becomes `eye-close`. `mouth-c` becomes `mouth-close`. `mouth`, and `mouth` followed by digits
       (optionally after `-`), become `mouth-open`. `レイヤー-1` becomes `facedetail`.
    5. A trailing run of `-<digits>`, `-l`, `-r`, `-left`, `-right`, `-top` or `-bottom` fragments is set aside as
@@ -597,8 +700,9 @@ Below, `w` and `h` are the owning layer's `w` and `h`, and `n` is the length of 
 Sub-kinds used above:
 
 - **joints**: a record with `shoulder`, `elbow` and `wrist`. Each is an array of exactly 3 coordinates [x, y, z].
-- **hand**: exactly 21 points, each an array of exactly 2 coordinates, in the COCO-WholeBody hand keypoint order
-  (point 0 the wrist, point 9 the middle finger's knuckle). Invariant: the distance from point 0 to point 9 is a bone,
+- **hand**: exactly 21 points, each an array of exactly 2 coordinates: point 0 the wrist, then four points for each
+  finger from its root to its tip, thumb first: 1–4 the thumb, 5–8 the index finger, 9–12 the middle finger, 13–16
+  the ring finger, 17–20 the little finger (so point 9 is the middle finger's knuckle). Invariant: the distance from point 0 to point 9 is a bone,
   that is in [0.001, 16384]. The modelled hand is scaled by that distance.
 - **rings**: an array of at most 256 rings, filled with the even-odd rule. Each ring is an array of points. Each point
   is an array of exactly 2 numbers [x, y], with x in [−2·w, 3·w] and y in [−2·h, 3·h]: a ring may reach past its
@@ -1059,9 +1163,11 @@ no `phys`, no fade other than `armVariant`, and role `neckwear`, `eyewear`, `ear
 
 ## 7. Atlas image
 
-- **Format.** A PNG image. It is the one image every layer's `atlas` rectangle cuts from (§5.3.3). The reference
-  player loads it through the browser's image decoder, so in practice any format the browser decodes works, but the
-  package format is PNG.
+- **Format.** A PNG image: 8-bit RGBA (colour type 6, bit depth 8), not interlaced, in the sRGB colour space (the
+  import tool draws it on an sRGB canvas; no colour profile or gamma chunk is needed, and the player does not use one).
+  It is the one image every layer's `atlas` rectangle cuts from (§5.3.3). The server stores only such PNGs, 256 to 8192
+  pixels on each side. The reference player loads it through the browser's image decoder, so in practice it would draw
+  any image the browser decodes, but the package format is the PNG above.
 - **Orientation.** The image's first row is its top. Atlas `y` = 0 is the top edge and y grows downward. The player
   does not flip the image on upload.
 - **Alpha.** The PNG holds straight (not premultiplied) alpha, as PNG defines. The player premultiplies on upload and
@@ -1070,8 +1176,8 @@ no `phys`, no fade other than `armVariant`, and role `neckwear`, `eyewear`, `ear
   `atlas.y · height` to whole pixels. Writers should place cuts on whole pixels.
 - **Gutters.** The player samples the atlas with mipmaps up to level 2. That assumes an 8-pixel transparent gutter
   between neighbouring cuts (`ANIME25D_ATLAS_MIP_GUTTER_PX`). Writers should leave at least 8 pixels between cuts.
-- **Size.** The player enforces no atlas size limit of its own, beyond what the browser and GPU can load. The atlas
-  is bounded only indirectly, by §5.12's limit on cut area. Hosts may impose their own limits.
+- **Size.** The player enforces no atlas size limit of its own, beyond what the browser and GPU can load; the server
+  stores atlases of 256 to 8192 pixels on each side (§1.1).
 
 ---
 
@@ -1142,9 +1248,11 @@ The pose is a JSON object. Three kinds of value are encoded as an object with ex
   reference implementation runs on is little-endian, so readers must take the bytes as **little-endian** IEEE 754
   binary32 (`f32`) and little-endian unsigned 16-bit integers (`u16`).
 - Every other number is a plain JSON number.
+- The −0 and non-finite encoding applies to every number anywhere in the pose, inside plain arrays too: a `number[]`
+  is a JSON array whose elements are plain numbers or `{"number": …}` objects (an arm's `sides` is often
+  `[{"number": "-Infinity"}, 5.25]`). Typed arrays carry their own bits and need no such encoding.
 - A reader decodes every object that has exactly one key, `f32`, `u16` or `number`, with a string value. It decodes
   such an object anywhere in the document. A `number` string is read as a JavaScript `Number(...)` conversion.
-- Arrays of plain numbers below (for example `number[]`) are JSON arrays, not encoded.
 
 ### 9.3 Version 1 driver keys
 
@@ -1234,11 +1342,16 @@ Their ranges are `DRIVER_LIMITS` in `src/anime25drig/driver.ts`.
 `figure` is the figure key (`figureKey` in `src/anime25drig/poseFrame.ts`). It has the form `<n>-<hash>`:
 
 - `n` is the number of layers in the player's prepared figure.
-- `hash` is a 32-bit FNV-1a hash, written in lower-case hexadecimal. It is computed over the Unicode code points of the
-  following texts joined with `|`:
+- `hash` is a 32-bit hash written in lower-case hexadecimal with no leading zeros (`Number.prototype.toString(16)`).
+  It starts at `0x811C9DC5`; for each Unicode code point `c` of the text below, in order, it becomes
+  `(hash XOR c) × 0x01000193 mod 2³²` (FNV-1a, with whole code points in place of bytes). The text is these parts
+  joined with `|`:
   1. for each prepared layer, a canonical text of the layer as the package gives it, after role and group resolution
-     and including its arm model. Object keys are sorted, undefined members left out, and each number written as
-     `round(v · e · 100000)`. A piece the player cut out of a layer is given by its name instead;
+     and including its arm model: an object as `{key:value,…}` with its keys sorted by UTF-16 code units and members
+     whose value is undefined left out, an array as `[a,b,…]`, a string, boolean or `null` as `JSON.stringify` writes
+     it, and a number `v` as the decimal integer `Math.round(v · e · 100000)`, where `e` is Euler's number as a 64-bit
+     float (`Math.E`, 2.718281828459045) and `Math.round` rounds halves up. A piece the player cut out of a layer is
+     given by its name instead;
   2. for each modelled arm, `<side>:<its gestures joined by ",">`;
   3. `collar:<number of collar clip values>` and `mouth:<true|false>`.
 
@@ -1257,11 +1370,12 @@ compare it for equality, and keep it unchanged.
 - [ ] `kind`: `"anime-2.5d-rig"` → `"myriad-figure"`.
 - [ ] `version`: `7` → `8`.
 - [ ] `engine`, `engineUrl`, `license`, `copyright` → removed. They are replaced by `credits[]` with `name`, `url`,
-      `license`, `copyright` (§4.3). Version 8 allows up to 16 credits. Version 7 has room for one.
+      `license`, `copyright` (§4.3). `credits` is required in version 8, 1 to 16 entries. Version 7 has room for one.
 - [ ] Pose-correction axis keys in `shellProfile.poseCorrections[].at`: `angleX` → `headYaw`, `angleY` → `headPitch`,
       `eyeCloseL` → `lidCloseL`, `eyeCloseR` → `lidCloseR`, `mouthOpen` → `jaw`. The other version's keys are invalid.
 - [ ] Everything else is unchanged: every other field, its place, its bounds, the sub-block versions, the atlas, the
       rig manifest and the contract.
 - [ ] Writers keep emitting version 7 until every reader they reach reads version 8 (§3.1).
 
-Separately from the package versions, pose JSON version 2 renames 16 driver keys from version 1 (§9.3).
+Separately from the package versions, pose JSON version 2 writes under their own names the 16 driver fields and 6
+switches that version 1 keeps under other keys (§9.3).
