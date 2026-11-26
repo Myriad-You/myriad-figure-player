@@ -1,0 +1,44 @@
+name: release
+
+# Publishes the package to npm when a version tag (v1.2.3) is pushed, and on nothing else. It stops before
+# publishing while package.json is marked private, and when the tag is not the version package.json names.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      # npm provenance signs the package with this workflow's identity.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          # packageManager names pnpm, which is not installed yet at this step.
+          package-manager-cache: false
+      - run: npm install --global pnpm@11.25.0
+      - name: The package is meant to be published, as the tagged version
+        run: |
+          node -e '
+            const pkg = require("./package.json")
+            if (pkg.private) { console.error("package.json is private: not publishing."); process.exit(1) }
+            if (`v${pkg.version}` !== process.env.GITHUB_REF_NAME) { console.error(`tag ${process.env.GITHUB_REF_NAME} is not v${pkg.version}`); process.exit(1) }
+          '
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      # pnpm pack writes publishConfig's exports (dist/) into the packed package.json; npm publishes that tarball.
+      - run: pnpm pack --out package.tgz
+      - run: npm publish ./package.tgz --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

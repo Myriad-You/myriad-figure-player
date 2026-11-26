@@ -9,6 +9,45 @@ Myriad 2.5D 形象的渲染层：在一块画布上用 WebGL2 画出一套 rig �
 - **是**：舞台 `Anime25DStage`（把服装送上 GPU、网格变形、头壳转头与关键形、头发和胸的物理、表情形状、绘制、触摸命中、姿势的取出与重画），它读的驱动接口 `Anime25DDriving`，以及一个不带表演的基础驱动 `Anime25DBasicDriving`（待机摆动、眨眼、朝目标参数平滑过渡，可选跟随指针）和把两者装在一起的 `FigurePlayer`。
 - **不是**：表演系统（行为排程、说话和唱歌时的身体、表演指令、贴纸脸的动态）和 rig 的导入工具都不在这里。舞台不自己动：每一帧画什么由驱动决定；基础驱动只让形象“活着”，别的动作要调用方自己写参数或自己实现驱动。
 
+## 安装
+
+```sh
+pnpm add @myriad/figure-player
+```
+
+> 这个包还没有发布到 npm。发布之前可以从 git 按提交装：`pnpm add github:Myriad-You/myriad-figure-player#<提交>`。从 git 装到的是 TypeScript 源码（`src/`，`exports` 指向它），要由宿主的打包工具（Vite 等）编译；从 npm 装到的是 `dist/` 里编好的 ESM、`.d.ts` 和 source map。两种装法入口和名字相同。
+
+在浏览器里运行，需要 WebGL2；没有运行时依赖。包里没有 Worker，也没有要另外拷贝的资源文件。
+
+一个能跑的最小页面：取一个播放包（`playback.json`）和它的图集（`atlas.png`），画出来，让形象自己动：
+
+```ts
+import { FigurePlayer, isAnime25DPlayback } from '@myriad/figure-player'
+
+async function main(): Promise<void> {
+  const canvas = document.createElement('canvas')
+  canvas.style.cssText = 'display: block; width: 384px; height: 512px'
+  document.body.append(canvas)
+
+  const playback = await (await fetch('/figure/playback.json')).json()
+  if (!isAnime25DPlayback(playback))
+    throw new Error('Not a package this player reads.')
+
+  const player = new FigurePlayer(canvas, playback)
+  player.resize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio)
+  await player.loadAtlas('/figure/atlas.png')
+
+  let last = performance.now()
+  requestAnimationFrame(function frame(now) {
+    player.tick((now - last) / 1000)
+    last = now
+    requestAnimationFrame(frame)
+  })
+}
+
+main()
+```
+
 ## 入口
 
 `package.json` 的 `exports` 有三个入口，目录里别的文件都是内部的：
@@ -83,7 +122,10 @@ pnpm install
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm build   # dist/：三个入口的 ESM、.d.ts 和 source map
 ```
+
+`package.json` 的 `exports` 指向 `src/`，好让从 git 装的宿主直接用源码；打包发布时 `publishConfig` 里的 `exports` 换成 `dist/`。所以要用 `pnpm pack` / `pnpm publish` 打包，`npm pack` 不会换。`.github/workflows/release.yml` 在推送版本标签时构建并发布（带 npm provenance）；`package.json` 标着 `"private": true` 时它在发布前就停下。
 
 `contracts/merope_rig_contract.json` 是 [myriad-core](https://github.com/Myriad-You/myriad-core) `shared/` 里 rig 契约的逐字节副本，不手改。
 

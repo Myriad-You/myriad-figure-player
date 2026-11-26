@@ -57,6 +57,13 @@ export default antfu(
     },
   },
   {
+    // In `files` a negation applies to what is listed before it: sorted, it would exclude nothing.
+    files: ['package.json'],
+    rules: {
+      'jsonc/sort-array-values': 'off',
+    },
+  },
+  {
     // A warning asks for a split of a long file while the seams are still obvious.
     files: ['src/**/*.ts'],
     ignores: ['**/*.test.ts', '**/*.fixture.ts'],
