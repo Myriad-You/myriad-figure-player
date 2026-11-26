@@ -211,7 +211,7 @@ test('a bound standing figure sways at its idle share and shifts its weight', ()
   assert.deepEqual(a.map(frame => frame.headYaw), b.map(frame => frame.headYaw))
 })
 
-test('nothing talks: `talking` starts off, so turning `torsoBreath` off stills the torso\'s lift', () => {
+test('nothing talks: `talking` starts off and stays off, in target and current, once `torsoBreath` is turned off', () => {
   const driving = new Anime25DBasicDriving(seeded(3))
   assert.equal(driving.target.talking, false)
   assert.equal(driving.shared.current.talking, false)

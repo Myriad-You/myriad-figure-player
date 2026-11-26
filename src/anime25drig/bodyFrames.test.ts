@@ -6,6 +6,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { Anime25DBodyFrames } from './bodyFrames'
 import { IDENTITY_DRIVER } from './driver'
+import { createHairChain } from './hairChain'
+import { HAIR_CHAIN_LINKS } from './hairPhysics'
 
 // A bust with no layers: face 100–220, neck's foot 270, body pivot 600.
 const BUST = {
@@ -77,4 +79,49 @@ test('with `breathing` off the breath eases to mid-breath and holds there', () =
 test('switched back on, the breath eases in again', () => {
   const frames = breaths(14, time => time < 2 || time > 8)
   assert.ok(spread(frames.filter(f => f.time > 10).map(f => f.body)) > 1.5)
+})
+
+/** A front lock hanging 300 px from its root, as hair physics binds one. */
+function lock() {
+  return {
+    lengthRatio: 1, supportX: 0, supportY: 0, rootX: 100, rootY: 50,
+    chain: createHairChain(100, 50, 100, 350, HAIR_CHAIN_LINKS),
+    phase: 0.3, amplitudeScale: 1, stiffnessScale: 1, dampingScale: 1,
+  }
+}
+
+/** How far the torso's lift and a hanging lock's tip travel over seconds 4 to 10, with `patch` on the driver. */
+function liftAndWind(patch: Partial<typeof IDENTITY_DRIVER>) {
+  const current = { ...IDENTITY_DRIVER, talking: false, singing: false, ...patch }
+  const renderFrame = { viewWidth: 1000, viewHeight: 1000 } as Anime25DRenderFrame
+  const body = new Anime25DBodyFrames(current, renderFrame, DRIVING)
+  body.bind(body.measure(BUST, ENVELOPE))
+  const spring = lock()
+  const layers = [{ frontHair: true, springs: [spring], secondaryDeformation: {} }] as never
+  const lifts: number[] = []
+  const tips: number[] = []
+  for (let step = 1; step <= 600; step += 1) {
+    const time = step * DT
+    body.stepPosture(DT, time)
+    body.updateSprings(DT, layers, time)
+    body.prepareHeadFrame(time)
+    if (time < 4) continue
+    lifts.push(renderFrame.bodyLift!.amount)
+    tips.push(spring.chain.offsetX[spring.chain.links]!)
+  }
+  return { lift: spread(lifts), wind: spread(tips) }
+}
+
+test('`torsoBreath` gates the torso\'s lift and `hairWind` the hair\'s wind, each alone', () => {
+  const both = liftAndWind({})
+  assert.ok(both.lift > 0.01 && both.wind > 0.5, JSON.stringify(both))
+  const noLift = liftAndWind({ torsoBreath: false })
+  assert.ok(noLift.lift < 1e-6, `lift ${noLift.lift}`)
+  assert.ok(noLift.wind > 0.5, `wind ${noLift.wind}`)
+  const noWind = liftAndWind({ hairWind: false })
+  assert.equal(noWind.wind, 0)
+  assert.ok(noWind.lift > 0.01, `lift ${noWind.lift}`)
+  // Talking or singing lifts the torso with the breath whatever `torsoBreath` says.
+  assert.ok(liftAndWind({ torsoBreath: false, talking: true }).lift > 0.01)
+  assert.ok(liftAndWind({ torsoBreath: false, singing: true }).lift > 0.01)
 })
