@@ -1,9 +1,9 @@
-// For hosts that build on the stage what this package does not carry: a full driving of their own (a performance
-// system) or tools that make and check playback packages. These are the internal parts such a host shares with the
-// stage, so that it draws and measures what the stage draws: the package format's types and vocabularies, the driver's
-// response and composition steps, the deformation and pose helpers, and the drawn-expression helpers the stage itself
-// uses. No stability promise of any kind: names and shapes here change with the internals, in any release.
-// A page that only plays a figure needs `.`; an authoring tool reading a live stage needs ./workbench.
+// Lower-level parts of the stage that a host writing its own full driving needs: the package format's types and
+// vocabularies (including reading a layer's role and group from its name), the driver's response and composition
+// steps, deformation and pose helpers, and the stage's own expression helpers, which sample artwork pixels (lip, teeth
+// and line colours), paint the generated mouths at load and draw time, and size the generated eyes to the drawn ones.
+// Not a designed or complete toolkit, and no stability promise of any kind: names and shapes change in any release.
+// This entry holds no performance system and no rig-building tool. A page that only plays a figure needs `.`.
 
 export { ARM_VARIANT_DRIVERS } from './anime25drig/armVariantPresenter'
 export { localToAtlasUv } from './anime25drig/atlasUv'
@@ -11,9 +11,9 @@ export { Anime25DBodyFrames } from './anime25drig/bodyFrames'
 export { applyBodyLift, BODY_LIFT_GLSL, bodyPitchUniform } from './anime25drig/bodyLift'
 export { bodyKeyShare, headRidesBody } from './anime25drig/bodyTurnKeyforms'
 export type { CollarClipMesh } from './anime25drig/collarRuntime'
-export { ANIME25D_COPYRIGHT, ANIME25D_LICENSE, ANIME25D_PLAYBACK_KIND, ANIME25D_PLAYBACK_VERSION } from './anime25drig/credit'
+export { ANIME25D_PLAYBACK_KIND, ANIME25D_PLAYBACK_VERSION } from './anime25drig/credit'
 export { DEFAULT_FRONT_HAIR_SWAY, DEFAULT_REAR_HAIR_SWAY, sanitizeDriverPatch } from './anime25drig/driver'
-export type { Anime25DBlinkState, Anime25DStylizedTargets } from './anime25drig/driverComposition'
+export type { Anime25DBlinkState } from './anime25drig/driverComposition'
 export { applyAnime25DCryMouth, applyAnime25DSillyMouthOwnership, prepareAnime25DWorkingTarget, smoothAnime25DUnit, stepAnime25DBlink, stepAnime25DDriverResponse } from './anime25drig/driverComposition'
 export { FIGURE_PITCH_BACK, FIGURE_PITCH_FORWARD } from './anime25drig/figurePitch'
 export { GazeShiftBlink } from './anime25drig/gazeBlink'
@@ -37,6 +37,7 @@ export { isStandingFigure, STANDING_HEAD_ROLL, STANDING_IDLE_SHARE, standingWeig
 export type { Anime25DTurnKey, Anime25DTurnKeyforms, Anime25DTurnLattice } from './anime25drig/turnKeyforms'
 export { isAnime25DTurnKeyforms } from './anime25drig/turnKeyforms'
 export type { Anime25DArmLift, Anime25DArmModel, Anime25DArmVariant, Anime25DChestProfile, Anime25DEyeAnchor, Anime25DFade, Anime25DJointName, Anime25DMouthBridgeTuning, Anime25DMouthMaterial, Anime25DMouthProfile, Anime25DMouthSilhouette, Anime25DPart, Anime25DPartProfile, Anime25DPlaybackAnchors, Anime25DPlaybackLayer, Anime25DShellCurvePoint, Anime25DShellEllipsoid, Anime25DShellProfile, Anime25DSkeleton, Anime25DTorsoShellProfile, Anime25DVec3 } from './anime25drig/types'
+export { ANIME25D_ATLAS_MIP_GUTTER_PX } from './anime25drig/webglRuntime'
 export type { RgbColor } from './expressionShapes/dizzyEye'
 export { DIZZY_EYE_FIT, sampleDizzyEyeTint } from './expressionShapes/dizzyEye'
 export type { Anime25DFaceFrame } from './expressionShapes/faceFrame'
@@ -50,13 +51,10 @@ export { mixColor } from './expressionShapes/mouthShared'
 export { SQUEEZE_EYE_WIDTH_FIT } from './expressionShapes/squeezeEye'
 export type { Anime25DLayerRole } from './rig/anime25d'
 export { ANIME25D_LAYER_DEPTH, ANIME25D_LAYER_DESCRIPTORS } from './rig/anime25d'
-export type { EyeSide, HairStrand, RasterLayer } from './rig/anime25dImportTypes'
 export { anime25DBaseRole, anime25DLayerGroup, anime25DLayerNameParts, canonicalAnime25DLayerName, isAnime25DLiningPiece, isAnime25DRigidAttachment, normalizeAnime25DLayerName, resolveAnime25DLayerSemantics } from './rig/anime25dLayerSemantics'
 export type { ArmVariantGesture } from './rig/armGestures'
 export { ARM_VARIANT_GESTURES } from './rig/armGestures'
 export type { CharacterAssetProfile } from './rig/contract'
-export { CHARACTER_ASSET_PROFILES, MAX_RIG_BONES, MAX_RIG_PARTS, RIG_SEMANTIC_BONE_ROLES, RIG_SEMANTIC_CHAIN_ROLES } from './rig/contract'
-export { formatTemplate } from './rig/formatTemplate'
-export { everyItem } from './rig/lists'
+export { CHARACTER_ASSET_PROFILES, MAX_RIG_BONES, MAX_RIG_PARTS, RIG_MATRIX_CAPACITY, RIG_SEMANTIC_BONE_ROLES, RIG_SEMANTIC_CHAIN_ROLES } from './rig/contract'
 export type { RigBone, RigMotionProfile, RigOutfitProfile, RigOutfitTopology, RigPoint, RigSemanticAnchor, RigSemanticBoneRole, RigSemanticChainRole, RigSemantics, RigSize, RigSpatialProfile, RigVertex } from './rig/types'
 export { RIG_OUTFIT_TOPOLOGIES } from './rig/types'

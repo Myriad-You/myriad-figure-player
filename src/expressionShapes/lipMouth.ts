@@ -1,5 +1,3 @@
-import type { RasterLayer } from '../rig/anime25dImportTypes'
-
 /**
  * Speaking mouths for a face whose painted mouth has lips: a painterly or
  * made-up mouth, not a cel line. The cel glyph (dark rim, flat fill) reads as
@@ -26,7 +24,14 @@ const MIN_LIP_SHARE = 0.25
 const MIN_MOUTH_ASPECT = 0.22
 
 /** The painted mouth's lips and teeth, or null for a cel line mouth. */
-export function detectPaintedLips(mouth: Pick<RasterLayer, 'width' | 'height' | 'data'>): PaintedLips | null {
+/** A drawn mouth's pixels: RGBA, row by row. */
+export interface MouthPixels {
+  width: number
+  height: number
+  data: Uint8ClampedArray
+}
+
+export function detectPaintedLips(mouth: Readonly<MouthPixels>): PaintedLips | null {
   const { width, height, data } = mouth
   if (width < 8 || height < 4 || data.length !== width * height * 4) return null
   let visible = 0
