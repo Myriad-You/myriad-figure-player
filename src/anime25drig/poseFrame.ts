@@ -11,7 +11,7 @@ import type { Anime25DDriver } from './driver'
 import type { Anime25DGpuLayer } from './layerGpuBinding'
 import type { Anime25DArmPose, Anime25DClothPose, Anime25DDrawnArmPose, Anime25DLayerPose, Anime25DPose } from './pose'
 import type { Anime25DRenderableLayer, Anime25DRenderFrame } from './renderer'
-import type { ThinkingStickerFrame } from './thinkingSticker'
+import type { Anime25DSpinnerFrame } from './spinnerSticker'
 import { cutFrom } from './partSplit'
 
 // Taking a drawn frame as a pose, and a pose as a frame to draw. The frame drawn for a pose is made of shadows of the
@@ -152,7 +152,7 @@ const liftFits = (lift: Readonly<BodyLift>) => has(lift, LIFT) && [lift.pitch, l
 const LIFT: BodyLift = { centerX: 0, upperY: 0, lowerY: 0, amount: 0 }
 const FRAME: Omit<Anime25DRenderFrame, 'bodyLift'> = { viewWidth: 0, viewHeight: 0, bodyPivotX: 0, bodyPivotY: 0, bodyRotationCosine: 0, bodyRotationSine: 0, bodyBendHeight: 0, time: 0, eyeCry: 0 }
 const MOUTH: ContinuousMouthShape = { wide: 0, round: 0, narrow: 0 }
-const STICKER: ThinkingStickerFrame = { time: 0, amount: 0, x: 0, y: 0, size: 0 }
+const STICKER: Anime25DSpinnerFrame = { time: 0, amount: 0, x: 0, y: 0, size: 0 }
 
 function armFits(side: string, arm: Arm3DSide, value: unknown): boolean {
   const own = value as Readonly<Anime25DArmPose>

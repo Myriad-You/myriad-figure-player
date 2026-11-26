@@ -88,14 +88,32 @@ export interface Anime25DDriver {
   eyeScaleL: number
   eyeScaleR: number
   mouthScale: number
-  idle: boolean
-  blink: boolean
-  rand: boolean
+  /**
+   * The stage's breath, one every 3.4 s: the head and body rise and fall a little and the chest swells. Off, they
+   * ease to mid-breath and stay there; with every other switch here off too, the figure holds fully still.
+   */
+  breathing: boolean
+  /** The breath also lifts the upper body; so it does while `talking` or `singing` is on. Read by the stage. */
+  torsoBreath: boolean
+  /** A light wind through the hair springs; needs `physics`. Read by the stage. */
+  hairWind: boolean
+  /** Hair, chest, cloth and accessory physics. Off, they hang as posed. Read by the stage. */
+  physics: boolean
+  /**
+   * The basic driving's slow idle sway: the head drifts in turn, nod and tilt and the body leans, and a standing
+   * figure shifts its weight from leg to leg.
+   */
+  idleSway: boolean
+  /** Blinks on their own, at a random pace and after large gaze shifts (the basic driving). */
+  autoBlink: boolean
+  /** The head and eyes follow the pointer given to setPointer() (the basic driving). */
+  followPointer: boolean
+  /** The figure is thinking. Not read by the stage; a driving may keep it as part of what it was asked to be. */
   thinking: boolean
+  /** The figure is singing: the stage lifts the upper body with the breath, as for `torsoBreath`. */
   singing: boolean
-  talk: boolean
-  mouse: boolean
-  phys: boolean
+  /** The figure is talking: the stage lifts the upper body with the breath, as for `torsoBreath`. */
+  talking: boolean
 }
 
 export const DEFAULT_FRONT_HAIR_SWAY = 1
@@ -172,24 +190,27 @@ export const IDENTITY_DRIVER: Anime25DDriver = {
   eyeScaleL: 1,
   eyeScaleR: 1,
   mouthScale: 1,
-  idle: true,
-  blink: true,
-  rand: true,
+  breathing: true,
+  torsoBreath: true,
+  hairWind: true,
+  physics: true,
+  idleSway: true,
+  autoBlink: true,
+  followPointer: false,
   thinking: false,
   singing: false,
-  talk: true,
-  mouse: false,
-  phys: true,
+  talking: true,
 }
 
 export const WORKBENCH_DRIVER: Anime25DDriver = {
   ...IDENTITY_DRIVER,
-  idle: false,
-  rand: false,
-  talk: false,
-  blink: true,
-  mouse: false,
-  phys: true,
+  torsoBreath: false,
+  hairWind: false,
+  idleSway: false,
+  talking: false,
+  autoBlink: true,
+  followPointer: false,
+  physics: true,
 }
 
 const DRIVER_LIMITS: Partial<

@@ -3,7 +3,7 @@ import type { KeyedGaze } from './keyedGaze'
 import type { Anime25DEyeAnchor, Anime25DPlaybackLayer } from './types'
 import { GAZE_REACH_X, GAZE_REACH_Y } from './keyedGaze'
 
-export type Anime25DUpstreamFeatureKind =
+export type Anime25DEyeFeatureKind =
   'eye-close' | 'eye-open-iris' | 'eye-open-lid' | 'eyebrow'
 
 export interface Anime25DMutablePoint {
@@ -11,7 +11,7 @@ export interface Anime25DMutablePoint {
   y: number
 }
 
-type UpstreamFeatureExpression = Pick<
+export type Anime25DEyeFeatureExpression = Pick<
   Anime25DDriver,
   | 'browLift'
   | 'browTiltL'
@@ -30,23 +30,23 @@ type UpstreamFeatureExpression = Pick<
   | 'eyeWide'
 >
 
-export interface Anime25DUpstreamFeatureInput {
-  kind: Anime25DUpstreamFeatureKind
+export interface Anime25DEyeFeatureInput {
+  kind: Anime25DEyeFeatureKind
   side: Anime25DPlaybackLayer['side']
   eye?: Anime25DEyeAnchor
   centerX: number
   centerY: number
   faceScale: number
-  expression: Readonly<UpstreamFeatureExpression>
+  expression: Readonly<Anime25DEyeFeatureExpression>
   /** An iris of a keyed head: its gaze move this frame, kept inside the white (keyedGaze). */
   keyedGaze?: KeyedGaze
 }
 
-/** Identify only local feature branches that remain unchanged from upstream. */
-export function resolveAnime25DUpstreamFeature(
+/** The eye or brow deformation a layer takes, if any: the closed lids, the open lids, the irises or a brow. */
+export function resolveAnime25DEyeFeature(
   source: Pick<Anime25DPlaybackLayer, 'fade' | 'role'>,
   hasEyeAnchor: boolean,
-): Anime25DUpstreamFeatureKind | null {
+): Anime25DEyeFeatureKind | null {
   if (
     (source.role === 'eye-close' || source.role === 'eye-close2') &&
     hasEyeAnchor
@@ -60,16 +60,16 @@ export function resolveAnime25DUpstreamFeature(
   return null
 }
 
-export function bindAnime25DUpstreamFeature(
+export function bindAnime25DEyeFeature(
   source: Pick<
     Anime25DPlaybackLayer,
     'fade' | 'h' | 'role' | 'side' | 'w' | 'x' | 'y'
   >,
   eye: Anime25DEyeAnchor | undefined,
   faceScale: number,
-  expression: Readonly<UpstreamFeatureExpression>,
-): Anime25DUpstreamFeatureInput | null {
-  const kind = resolveAnime25DUpstreamFeature(source, Boolean(eye))
+  expression: Readonly<Anime25DEyeFeatureExpression>,
+): Anime25DEyeFeatureInput | null {
+  const kind = resolveAnime25DEyeFeature(source, Boolean(eye))
   if (!kind) return null
   return {
     kind,
@@ -82,9 +82,9 @@ export function bindAnime25DUpstreamFeature(
   }
 }
 
-export function deformAnime25DUpstreamFeaturePoint(
+export function deformAnime25DEyeFeaturePoint(
   point: Anime25DMutablePoint,
-  input: Readonly<Anime25DUpstreamFeatureInput>,
+  input: Readonly<Anime25DEyeFeatureInput>,
   irisRebound?: Readonly<{ x: number; y: number }>,
 ): void {
   const { expression } = input

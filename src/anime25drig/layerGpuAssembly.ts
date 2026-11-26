@@ -27,7 +27,7 @@ import { bindHairRootMotion } from './hairRootMotion'
 import { bindHairSurface } from './hairSurface'
 import { bindKeyedGaze } from './keyedGaze'
 import { bindAnime25DLayerAttachment, bindNeckwearBridge } from './layerAttachment'
-import { bindAnime25DUpstreamFeature } from './layerDeformation'
+import { bindAnime25DEyeFeature } from './layerDeformation'
 import { resolveAnime25DLayerDeformationPolicy } from './layerDeformationPolicy'
 import { writeIdentityLayerTransform } from './layerTransform'
 import { resolveAnime25DMouthDeformation } from './mouthDeformation'
@@ -224,14 +224,14 @@ export function buildGpuLayer(source: PlaybackLayer, context: GpuLayerBuildConte
         centerY: source.y + source.h / 2,
       }
     : null
-  const upstreamFeature = bindAnime25DUpstreamFeature(
+  const eyeFeatureInput = bindAnime25DEyeFeature(
     source,
     eye,
     playback.anchors.faceScale,
     current,
   )
-  if (upstreamFeature?.kind === 'eye-open-iris' && eye) {
-    upstreamFeature.keyedGaze = bindKeyedGaze(playback.turnKeyforms, source, eye) ?? undefined
+  if (eyeFeatureInput?.kind === 'eye-open-iris' && eye) {
+    eyeFeatureInput.keyedGaze = bindKeyedGaze(playback.turnKeyforms, source, eye) ?? undefined
   }
   const mouthDeformation = resolveAnime25DMouthDeformation(source.fade)
   const deformationPlan = createAnime25DLayerDeformationPlan(
@@ -242,7 +242,7 @@ export function buildGpuLayer(source: PlaybackLayer, context: GpuLayerBuildConte
       fade: source.fade,
       shaderGlobalTransform: deformationPolicy.shaderGlobalTransform,
       localDynamic: deformationPolicy.localDynamic,
-      upstreamFeatureKind: upstreamFeature?.kind ?? null,
+      eyeFeatureKind: eyeFeatureInput?.kind ?? null,
       expressionDeformationKind,
       mouthDeformationKind: mouthDeformation,
     }),
@@ -300,7 +300,7 @@ export function buildGpuLayer(source: PlaybackLayer, context: GpuLayerBuildConte
     indexCount: mesh ? indices.length : 0,
     layerTransform,
     ...deformationPolicy,
-    upstreamFeature,
+    eyeFeatureInput,
     mouthDeformation,
     expressionDeformation,
     secondaryDeformation,

@@ -2,7 +2,11 @@ import type {
   Anime25DEyeAnchor,
 } from './types'
 
-export interface Anime25DRiggerAnchors {
+/**
+ * The anchors as an importer measures them on the source picture (centres as `cx`, `cy`), before they are mapped into
+ * a package's Anime25DPlaybackAnchors.
+ */
+export interface Anime25DSourceAnchors {
   face: {
     cx: number
     cy: number

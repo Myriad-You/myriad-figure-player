@@ -9,7 +9,7 @@ function poseOf(at: number, gesture = 'wave'): Anime25DPose {
     version: 1,
     figure: '2-abc',
     time: at,
-    driver: { ...IDENTITY_DRIVER, headYaw: at, talk: at > 0.5 },
+    driver: { ...IDENTITY_DRIVER, headYaw: at, talking: at > 0.5 },
     frame: { viewWidth: 10, viewHeight: 20, bodyPivotX: at, bodyPivotY: 0, bodyRotationCosine: 1, bodyRotationSine: 0, bodyBendHeight: 0, time: at, eyeCry: 0 },
     order: Uint16Array.of(at > 0.5 ? 1 : 0, at > 0.5 ? 0 : 1),
     layers: [
@@ -39,7 +39,7 @@ test('a pose is itself again from JSON, to the bit', () => {
   assert.deepEqual(poseFromJSON(poseToJSON(pose)), pose)
   // The driver keeps the keys poses are written with.
   const { driver } = JSON.parse(poseToJSON(pose)) as { driver: Record<string, unknown> }
-  assert.deepEqual(Object.keys(driver), Object.keys(pose.driver).map(key => ({ headYaw: 'angleX', headPitch: 'angleY', headRoll: 'angleZ', lidL: 'eyeOpenL', lidR: 'eyeOpenR', gazeX: 'eyeX', gazeY: 'eyeY', jaw: 'mouthOpen', lipCurve: 'mouthForm', browLift: 'brow', browTiltL: 'browAngL', browTiltR: 'browAngR', browTilt: 'browAngSym', bodyLean: 'body', torsoFollow: 'bodyYaw', rearHairSway: 'physAmp' } as Record<string, string>)[key] ?? key))
+  assert.deepEqual(Object.keys(driver), Object.keys(pose.driver).map(key => ({ headYaw: 'angleX', headPitch: 'angleY', headRoll: 'angleZ', lidL: 'eyeOpenL', lidR: 'eyeOpenR', gazeX: 'eyeX', gazeY: 'eyeY', jaw: 'mouthOpen', lipCurve: 'mouthForm', browLift: 'brow', browTiltL: 'browAngL', browTiltR: 'browAngR', browTilt: 'browAngSym', bodyLean: 'body', torsoFollow: 'bodyYaw', rearHairSway: 'physAmp', torsoBreath: 'idle', physics: 'phys', idleSway: 'rand', autoBlink: 'blink', followPointer: 'mouse', talking: 'talk' } as Record<string, string>)[key] ?? key))
   assert.equal(driver.angleX, 0.7)
 })
 
@@ -59,7 +59,7 @@ test('between two poses, numbers are between and what cannot be is the nearer on
   assert.equal(near.layers[0]!.vertices![0], Math.fround(Math.fround(0.1) + (Math.fround(1.1) - Math.fround(0.1)) * 0.25))
   assert.deepEqual(near.order, a.order)
   assert.equal(near.sticker, null)
-  assert.equal(near.driver.talk, false)
+  assert.equal(near.driver.talking, false)
   const now = near.arms[0]!.now!
   assert.deepEqual(now.joints.w, [2, 0, 0.25])
   assert.deepEqual(now.sides, [-Infinity, 5.25])

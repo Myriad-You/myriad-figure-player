@@ -4,7 +4,7 @@ import test from 'node:test'
 import { Anime25DBasicDriving, measureAnime25DBasicFigure } from './basicDriving'
 import { IDENTITY_DRIVER } from './driver'
 import { BLINK_SECONDS } from './driverComposition'
-import { idleBreathOffset } from './idleBreath'
+import { idleSwayOffset } from './idleSway'
 
 const DT = 1 / 60
 
@@ -77,32 +77,33 @@ test('the same seed blinks the same; another seed differently', () => {
   assert.notDeepEqual(a.map(frame => frame.lidL), c.map(frame => frame.lidL))
 })
 
-test('the head and body follow the idle breath, bounded, while `rand` is on', () => {
+test('the head and body follow the idle sway, bounded, while `idleSway` is on', () => {
   const driving = new Anime25DBasicDriving(seeded(1))
-  driving.set({ blink: false })
+  driving.set({ autoBlink: false })
   const frames = run(driving, 120)
   let largest = 0
   frames.forEach((frame, index) => {
     const time = (index + 1) * DT
-    const breath = idleBreathOffset(time)
+    const sway = idleSwayOffset(time)
     assert.ok(Math.abs(frame.headYaw) <= 0.18 + 1e-9 && Math.abs(frame.bodyLean) <= 0.16 + 1e-9, `at ${time}`)
     largest = Math.max(largest, Math.abs(frame.headYaw))
     if (time < 2) return
-    for (const [key, channel] of [['headYaw', 'angleX'], ['headPitch', 'angleY'], ['headRoll', 'angleZ'], ['bodyLean', 'body']] as const)
-      assert.ok(Math.abs(frame[key] - breath[channel]) < 0.005, `${key} ${frame[key]} vs ${breath[channel]} at ${time}`)
+    for (const key of ['headYaw', 'headPitch', 'headRoll', 'bodyLean'] as const)
+      assert.ok(Math.abs(frame[key] - sway[key]) < 0.005, `${key} ${frame[key]} vs ${sway[key]} at ${time}`)
   })
-  assert.ok(largest > 0.1, `breath reaches ${largest}`)
-  // The same breath, a minute on, is where the breath function is: it depends on time alone.
+  assert.ok(largest > 0.1, `sway reaches ${largest}`)
+  // The same sway, a minute on, is where the sway function is: it depends on time alone.
   const later = run(driving, 1, 120).at(-1)!
-  assert.ok(Math.abs(later.headRoll - idleBreathOffset(121).angleZ) < 0.005)
+  assert.ok(Math.abs(later.headRoll - idleSwayOffset(121).headRoll) < 0.005)
 })
 
-test('with breath and blinks off, current settles on target and stays', () => {
+test('with sway and blinks off, current settles on target and stays', () => {
   const driving = new Anime25DBasicDriving(seeded(3))
   const ask: Partial<Anime25DDriver> = {
-    rand: false,
-    blink: false,
-    idle: false,
+    idleSway: false,
+    autoBlink: false,
+    torsoBreath: false,
+    hairWind: false,
     headYaw: 0.4,
     headPitch: -0.2,
     bodyLean: 0.3,
@@ -132,11 +133,11 @@ test('with breath and blinks off, current settles on target and stays', () => {
   }
 })
 
-test('blinks stop when `blink` is off, and a blink under way finishes', () => {
+test('blinks stop when `autoBlink` is off, and a blink under way finishes', () => {
   const driving = new Anime25DBasicDriving(seeded(5))
   const before = run(driving, 1.8 + 3 * DT)
   assert.ok(before.at(-1)!.lidL < 1, 'blinking')
-  driving.set({ blink: false })
+  driving.set({ autoBlink: false })
   const after = run(driving, 20, 1.8 + 3 * DT)
   assert.ok(after.slice(0, 3).every(frame => frame.lidL < 1), 'does not spring open')
   const settled = after.slice(Math.ceil(BLINK_SECONDS / DT))
@@ -153,12 +154,12 @@ test('nothing performs: the neutral answers to the stage', () => {
   const driving = new Anime25DBasicDriving()
   for (const control of ['torsoTurn', 'torsoRise', 'torsoPitch', 'leftArmRaise', 'rightArmRaise', 'leftArmSwing', 'rightArmSwing'] as const)
     assert.equal(driving.directedBodyWeight(control), 0)
-  assert.equal(driving.jawEmphasis, 0)
-  assert.equal(driving.stylizedMotion, null)
-  assert.equal(driving.stylizedHeadShare, 0.25)
-  assert.equal(driving.sillyMouthShare, 1)
+  assert.equal(driving.jawBoost, 0)
+  assert.equal(driving.stickerFaceMotion, null)
+  assert.equal(driving.stickerFaceHeadShare, 0.25)
+  assert.equal(driving.stickerMouthShare, 1)
   run(driving, 3)
-  assert.equal(driving.thinkingLevel(), 0)
+  assert.equal(driving.spinnerLevel(), 0)
   assert.deepEqual(driving.measureCapabilities(undefined, { torsoVolume: true, arms: ['L', 'R'] }), [])
   driving.bindCapabilities(['head-body'])
   driving.drawn()
@@ -167,19 +168,19 @@ test('nothing performs: the neutral answers to the stage', () => {
 
 test('set() bounds what it is given and drops what is not a value', () => {
   const driving = new Anime25DBasicDriving()
-  driving.set({ headYaw: 5, lidL: Number.NaN, jaw: -1, blink: 'no' as unknown as boolean })
+  driving.set({ headYaw: 5, lidL: Number.NaN, jaw: -1, autoBlink: 'no' as unknown as boolean })
   assert.equal(driving.target.headYaw, 1)
   assert.equal(driving.target.lidL, 1)
   assert.equal(driving.target.jaw, 0)
-  assert.equal(driving.target.blink, true)
+  assert.equal(driving.target.autoBlink, true)
 })
 
-test('the pointer leads head and eyes only while `mouse` is on, and lets go gently', () => {
+test('the pointer leads head and eyes only while `followPointer` is on, and lets go gently', () => {
   const driving = new Anime25DBasicDriving(seeded(2))
-  driving.set({ blink: false, rand: false })
+  driving.set({ autoBlink: false, idleSway: false })
   driving.setPointer(1, -1, true)
   assert.equal(run(driving, 2).at(-1)!.headYaw, 0)
-  driving.set({ mouse: true })
+  driving.set({ followPointer: true })
   const led = run(driving, 2, 2).at(-1)!
   assert.ok(Math.abs(led.headYaw - 0.9) < 1e-3, `${led.headYaw}`)
   assert.ok(Math.abs(led.headPitch - 0.7) < 1e-3, `${led.headPitch}`)
@@ -196,11 +197,11 @@ test('a standing figure is measured as one; a bust is not', () => {
   assert.deepEqual(measureAnime25DBasicFigure({ anchors: anchors() }), { standing: false, headRidesBody: 0 })
 })
 
-test('a bound standing figure breathes at its idle share and shifts its weight', () => {
+test('a bound standing figure sways at its idle share and shifts its weight', () => {
   const bust = new Anime25DBasicDriving(seeded(4))
   const figure = new Anime25DBasicDriving(seeded(4))
-  bust.set({ blink: false })
-  figure.set({ blink: false })
+  bust.set({ autoBlink: false })
+  figure.set({ autoBlink: false })
   const open = { startsAt: 1, limit: 1 }
   figure.bind({ standing: true, headRidesBody: 0 }, { highCollar: false, armMotion: true, pitch: open, torso: open, rigidArm: open, headTurn: open, headTilt: open })
   const a = run(bust, 30)
@@ -210,12 +211,12 @@ test('a bound standing figure breathes at its idle share and shifts its weight',
   assert.deepEqual(a.map(frame => frame.headYaw), b.map(frame => frame.headYaw))
 })
 
-test('nothing talks: talk starts off, so turning idle off stills the torso\'s breath', () => {
+test('nothing talks: `talking` starts off, so turning `torsoBreath` off stills the torso\'s lift', () => {
   const driving = new Anime25DBasicDriving(seeded(3))
-  assert.equal(driving.target.talk, false)
-  assert.equal(driving.shared.current.talk, false)
-  driving.set({ idle: false })
+  assert.equal(driving.target.talking, false)
+  assert.equal(driving.shared.current.talking, false)
+  driving.set({ torsoBreath: false })
   run(driving, 1)
-  assert.equal(driving.shared.current.talk, false)
-  assert.equal(driving.shared.current.idle, false)
+  assert.equal(driving.shared.current.talking, false)
+  assert.equal(driving.shared.current.torsoBreath, false)
 })

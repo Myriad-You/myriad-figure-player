@@ -34,7 +34,6 @@ export interface Anime25DDebugSnapshot {
     pitchLimit: number
     torsoLimit: number
     armLimit: number
-    transferredEnergy: number
   }
   performance: Anime25DPerformanceSnapshot
   current: Anime25DDriver
@@ -68,7 +67,6 @@ const DEBUG_FADE_COUNTS = {
 export function describeAnime25DPlayback(
   playback: Readonly<Anime25DPlayback>,
   motionEnvelopeProfile: Readonly<Anime25DMotionEnvelopeProfile>,
-  transferredEnergy: number,
   performance: Anime25DPerformanceSnapshot,
   current: Anime25DDriver,
 ): Anime25DDebugSnapshot {
@@ -91,7 +89,6 @@ export function describeAnime25DPlayback(
       pitchLimit: motionEnvelopeProfile.pitch.limit,
       torsoLimit: motionEnvelopeProfile.torso.limit,
       armLimit: motionEnvelopeProfile.rigidArm.limit,
-      transferredEnergy,
     },
     performance,
     current,

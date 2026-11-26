@@ -46,7 +46,7 @@ export function prepareAnime25DWorkingTarget(
   authority: number,
 ): Anime25DDriver {
   Object.assign(output, authored)
-  if (!authored.mouse) return output
+  if (!authored.followPointer) return output
   const amount = clamp(Number.isFinite(authority) ? authority : 0, 0, 1)
   if (amount <= 0) return output
   output.headYaw = mixPointer(authored.headYaw, pointer.x * 0.9, amount)
@@ -247,23 +247,27 @@ export function stepAnime25DDriverResponse(
 function isAutomationFlag(
   key: keyof Anime25DDriver,
 ): key is
-  | 'idle'
-  | 'blink'
-  | 'rand'
+  | 'breathing'
+  | 'torsoBreath'
+  | 'hairWind'
+  | 'physics'
+  | 'idleSway'
+  | 'autoBlink'
+  | 'followPointer'
   | 'thinking'
   | 'singing'
-  | 'talk'
-  | 'mouse'
-  | 'phys' {
+  | 'talking' {
   return (
-    key === 'idle' ||
-    key === 'blink' ||
-    key === 'rand' ||
+    key === 'breathing' ||
+    key === 'torsoBreath' ||
+    key === 'hairWind' ||
+    key === 'physics' ||
+    key === 'idleSway' ||
+    key === 'autoBlink' ||
+    key === 'followPointer' ||
     key === 'thinking' ||
     key === 'singing' ||
-    key === 'talk' ||
-    key === 'mouse' ||
-    key === 'phys'
+    key === 'talking'
   )
 }
 

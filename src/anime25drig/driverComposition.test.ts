@@ -27,8 +27,8 @@ test('working target preparation reuses its output and preserves the pointer mat
     gazeX: 0.1,
     gazeY: -0.2,
     bodyLean: 0.25,
-    mouse: true,
-    idle: true,
+    followPointer: true,
+    torsoBreath: true,
   }
   const output = { ...IDENTITY_DRIVER }
   const actual = prepareAnime25DWorkingTarget(
@@ -54,7 +54,7 @@ test('pointer gaze is a weight, so leaving eases off instead of dropping', () =>
     headPitch: 0.1,
     gazeX: 0.05,
     gazeY: -0.05,
-    mouse: true,
+    followPointer: true,
   }
   const pointer = { x: 0.46, y: -0.33, inside: true }
   const at = (authority: number) =>
@@ -71,7 +71,7 @@ test('pointer gaze is a weight, so leaving eases off instead of dropping', () =>
   assert.ok(Math.abs(half.gazeX - (authored.gazeX + held.gazeX) / 2) < 1e-12)
   const ignored = prepareAnime25DWorkingTarget(
     { ...IDENTITY_DRIVER },
-    { ...authored, mouse: false },
+    { ...authored, followPointer: false },
     pointer,
     1,
   )
@@ -149,14 +149,16 @@ test('new pose response leaves mouth, expression, blink and physics flags unchan
     target.lidR = (Math.cos(frame * 0.11) + 1) * 0.5
     target.irisScale = 0.9 + Math.sin(frame * 0.03) * 0.2
     target.mouthScale = 1 + Math.cos(frame * 0.05) * 0.25
-    authored.idle = frame % 2 === 0
-    authored.blink = frame % 3 !== 0
-    authored.rand = frame % 5 !== 0
+    authored.torsoBreath = frame % 2 === 0
+    authored.autoBlink = frame % 3 !== 0
+    authored.idleSway = frame % 5 !== 0
     authored.thinking = frame % 7 === 0
     authored.singing = frame % 11 === 0
-    authored.talk = frame % 13 !== 0
-    authored.mouse = frame % 17 === 0
-    authored.phys = frame % 19 !== 0
+    authored.talking = frame % 13 !== 0
+    authored.followPointer = frame % 17 === 0
+    authored.physics = frame % 19 !== 0
+    authored.breathing = frame % 29 !== 0
+    authored.hairWind = frame % 31 === 0
     secondaryTarget.headYaw = Math.sin(frame * 0.04)
     secondaryTarget.headPitch = Math.cos(frame * 0.05)
     secondaryTarget.headRoll = Math.sin(frame * 0.06 + 0.4)
@@ -199,14 +201,16 @@ function referenceStepDriverResponse(
 ): void {
   const rate = Math.min(1, dt * 14)
   const flags = [
-    'idle',
-    'blink',
-    'rand',
+    'breathing',
+    'torsoBreath',
+    'hairWind',
+    'physics',
+    'idleSway',
+    'autoBlink',
+    'followPointer',
     'thinking',
     'singing',
-    'talk',
-    'mouse',
-    'phys',
+    'talking',
   ] as const
   for (const key of Object.keys(IDENTITY_DRIVER) as Array<
     keyof Anime25DDriver

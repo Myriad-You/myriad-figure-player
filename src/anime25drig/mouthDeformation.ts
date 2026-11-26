@@ -1,6 +1,6 @@
 import type { Anime25DDriver } from './driver'
 import type { MouthMorphState } from './mouthRuntime'
-import type { StylizedExpressionMotion } from './stylizedExpressionMotion'
+import type { Anime25DStickerFaceMotion } from './stickerFaceMotion'
 import type { Anime25DPlayback, Anime25DPlaybackLayer } from './types'
 
 type MouthDeformationExpression = Pick<
@@ -9,7 +9,7 @@ type MouthDeformationExpression = Pick<
 >
 
 type MouthStylizedMotion = Pick<
-  StylizedExpressionMotion,
+  Anime25DStickerFaceMotion,
   'maniacUpperMouthPulse' | 'sillyMouthOpen'
 >
 
@@ -28,7 +28,7 @@ export interface Anime25DMouthDeformationFrame {
   jawDrop: number
   jawOpen: number
   time: number
-  stylizedMotion: Readonly<MouthStylizedMotion> | null
+  stickerFaceMotion: Readonly<MouthStylizedMotion> | null
 }
 
 export interface Anime25DMutableMouthPoint {
@@ -69,7 +69,7 @@ export function deformAnime25DMouthPoint(
   frame: Readonly<Anime25DMouthDeformationFrame>,
   kind: Anime25DMouthDeformationKind,
 ): void {
-  const { expression, morph, mouth, stylizedMotion } = frame
+  const { expression, morph, mouth, stickerFaceMotion } = frame
   const continuous = kind === 'continuous'
   if (continuous) {
     // Speaking materials open from a parted slit; the closed line keeps its drawn curve.
@@ -181,9 +181,9 @@ export function deformAnime25DMouthPoint(
   }
   if (source.fade === 'mouthManiac') {
     point.y += expression.mouthCY * 14 * frame.faceScale
-    if (stylizedMotion) {
+    if (stickerFaceMotion) {
       const localY = clamp((restY - source.y) / Math.max(1, source.h), 0, 1)
-      const upperMouthPulse = stylizedMotion.maniacUpperMouthPulse
+      const upperMouthPulse = stickerFaceMotion.maniacUpperMouthPulse
       const tongueRootAnchor = morph.centerY - morph.height * 0.045
       const scaledX =
         morph.centerX +
@@ -197,7 +197,7 @@ export function deformAnime25DMouthPoint(
     }
     rotateAround(point, mouth.cx, mouth.cy, expression.mouthCAng * 0.24)
   }
-  if (source.fade === 'mouthSilly' && stylizedMotion) {
+  if (source.fade === 'mouthSilly' && stickerFaceMotion) {
     const localX = clamp(
       (restX - (source.x + source.w / 2)) / Math.max(1, source.w / 2),
       -1,
@@ -208,7 +208,7 @@ export function deformAnime25DMouthPoint(
       -1,
       1,
     )
-    const opening = clamp(stylizedMotion.sillyMouthOpen, 0, 1)
+    const opening = clamp(stickerFaceMotion.sillyMouthOpen, 0, 1)
     const omegaLobe = Math.sin(Math.PI * Math.abs(localX))
     const omegaScale = Math.max(1, source.h)
     const closedX = morph.centerX + (point.x - morph.centerX) * 0.88

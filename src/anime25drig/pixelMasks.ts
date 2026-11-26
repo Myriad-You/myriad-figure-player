@@ -41,7 +41,7 @@ function spread(mask: Uint8Array, width: number, height: number, radius: number,
 }
 
 /** Pixels from the nearest pixel outside `mask`, two-pass chamfer. */
-export function insideDistance(mask: Uint8Array, width: number, height: number): Float32Array {
+export function maskInsideDistance(mask: Uint8Array, width: number, height: number): Float32Array {
   const far = width + height
   const distance = new Float32Array(mask.length)
   for (let p = 0; p < mask.length; p++) distance[p] = mask[p] ? far : 0

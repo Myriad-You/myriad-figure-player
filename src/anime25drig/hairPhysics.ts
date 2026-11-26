@@ -75,7 +75,7 @@ export interface Anime25DHairSpringLayer {
 
 export interface Anime25DHairSpringFrame {
   enabled: boolean
-  idle: boolean
+  wind: boolean
   faceScale: number
   time: number
   /** Softness drivers: a softer lock bends more toward its tip. */
@@ -201,7 +201,7 @@ export function stepAnime25DHairLayerSprings(
   elapsedSeconds: number,
 ): void {
   if (!frame.enabled) return
-  const windAmplitude = frame.idle ? 1 : 0
+  const windAmplitude = frame.wind ? 1 : 0
   for (const layer of layers) {
     if (!layer.springs) continue
     const base = layer.frontHair ? FRONT_HAIR_CHAIN : REAR_HAIR_CHAIN

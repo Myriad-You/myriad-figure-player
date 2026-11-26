@@ -18,7 +18,7 @@ export interface PreparedLivePackage {
   compiled: Anime25DCompiledGpuLayers
   texture: WebGLTexture | null
   touchAtlas: TouchAtlas | null
-  /** The eyelash's line art, which the thinking sticker draws in. */
+  /** The eyelash's line art, which the spinner sticker draws in. */
   linePixels: Uint8ClampedArray | undefined
 }
 

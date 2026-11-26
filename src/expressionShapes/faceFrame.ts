@@ -1,4 +1,4 @@
-import type { Anime25DRiggerAnchors } from '../anime25drig/playback'
+import type { Anime25DSourceAnchors } from '../anime25drig/playback'
 
 /** Beyond this the eye line is more likely a detection error than a head tilt. */
 const MAX_FACE_ROLL = (20 * Math.PI) / 180
@@ -25,7 +25,7 @@ export interface Anime25DFaceFrame {
 }
 
 export function resolveAnime25DFaceFrame(
-  anchors: Pick<Anime25DRiggerAnchors, 'eyeL' | 'eyeR' | 'face'>,
+  anchors: Pick<Anime25DSourceAnchors, 'eyeL' | 'eyeR' | 'face'>,
 ): Anime25DFaceFrame {
   const { eyeL, eyeR, face } = anchors
   if (eyeL && eyeR && eyeR.icx > eyeL.icx) {

@@ -11,10 +11,10 @@ function fadeOpacity(
   layer: Pick<Anime25DPlaybackLayer, 'fade' | 'side'>,
   driver: Readonly<Anime25DDriver>,
   activeMouthMaterial?: SpeechMouthMaterial,
-  sillyMouthShare = 1,
+  stickerMouthShare = 1,
 ): number {
   const frame = createAnime25DOpacityFrame()
-  writeAnime25DOpacityFrame(frame, driver, activeMouthMaterial as SpeechMouthMaterial, sillyMouthShare)
+  writeAnime25DOpacityFrame(frame, driver, activeMouthMaterial as SpeechMouthMaterial, stickerMouthShare)
   return fadeOpacityFromFrame(layer, frame)
 }
 

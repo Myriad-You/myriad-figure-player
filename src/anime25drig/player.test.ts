@@ -47,13 +47,13 @@ test('clamps all external driver writes at the runtime boundary', () => {
     jaw: -2,
     armPos: 8,
     bust: Number.NaN,
-    talk: true,
+    talking: true,
   })
   assert.equal(patch.headYaw, 1)
   assert.equal(patch.jaw, 0)
   assert.equal(patch.armPos, 1)
   assert.equal(patch.bust, undefined)
-  assert.equal(patch.talk, true)
+  assert.equal(patch.talking, true)
 })
 
 test('precompiled mouth sources retain the first authored variant', () => {

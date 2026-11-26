@@ -6,7 +6,7 @@ Myriad 2.5D 形象的渲染层：在一块画布上用 WebGL2 画出一套 rig �
 
 ## 是什么、不是什么
 
-- **是**：舞台 `Anime25DStage`（把服装送上 GPU、网格变形、头壳转头与关键形、头发和胸的物理、表情形状、绘制、触摸命中、姿势的取出与重画），它读的驱动接口 `Anime25DDriving`，以及一个不带表演的基础驱动 `Anime25DBasicDriving`（呼吸、眨眼、朝目标参数平滑过渡，可选跟随指针）和把两者装在一起的 `FigurePlayer`。
+- **是**：舞台 `Anime25DStage`（把服装送上 GPU、网格变形、头壳转头与关键形、头发和胸的物理、表情形状、绘制、触摸命中、姿势的取出与重画），它读的驱动接口 `Anime25DDriving`，以及一个不带表演的基础驱动 `Anime25DBasicDriving`（待机摆动、眨眼、朝目标参数平滑过渡，可选跟随指针）和把两者装在一起的 `FigurePlayer`。
 - **不是**：表演系统（行为排程、说话和唱歌时的身体、表演指令、贴纸脸的动态）和 rig 的导入工具都不在这里。舞台不自己动：每一帧画什么由驱动决定；基础驱动只让形象“活着”，别的动作要调用方自己写参数或自己实现驱动。
 
 ## 入口
@@ -35,12 +35,21 @@ function frame(now: number): void {
 }
 requestAnimationFrame(frame)
 
-// 想要的参数，按范围截断后形象平滑过去；呼吸和眨眼一直在。
+// 想要的参数，按范围截断后形象平滑过去；呼吸、摆动和眨眼一直在（见下面的开关）。
 player.set({ lipCurve: 0.4, headYaw: 0.2 })
 ```
 
 - 图集载入前、`resize()` 之前什么都不画。画布的 CSS 尺寸或设备像素比变了就再调 `resize()`；形象看不见时停掉帧循环；不用了调 `dispose()`。
-- 驱动参数的开关：`rand` 管头和身体的呼吸，`blink` 管自动眨眼，`mouse` 管跟随指针（配合 `setPointer(x, y, inside)`，x、y 是画布上 −1…1、向右向下），`idle`（胸口呼吸、头发的风）和 `phys`（头发、胸、衣物的物理）由舞台直接读。全关掉形象也不完全静止：舞台自己让头和身体随呼吸轻轻上下起伏（3.4 秒一周），不归任何开关管。
+- 驱动参数里的开关（都是布尔值，用 `set()` 改）：
+  - `breathing`：舞台的呼吸，3.4 秒一周，头和身体轻轻起伏、胸口随之鼓起；关掉后缓到半口气停住。
+  - `torsoBreath`：呼吸也带着上身抬落（`talking`、`singing` 开着时也会）。
+  - `hairWind`：头发里的微风，要 `physics` 开着才有。
+  - `physics`：头发、胸、衣物和饰物的物理；关掉后它们按姿势挂着。
+  - `idleSway`：基础驱动的待机摆动，头慢慢转、点、歪，身体侧倾；站姿还会左右换重心。
+  - `autoBlink`：基础驱动的自动眨眼。
+  - `followPointer`：头和眼睛跟随指针（配合 `setPointer(x, y, inside)`，x、y 是画布上 −1…1、向右向下）。
+  - 默认除 `followPointer` 外都开着。把 `breathing`、`torsoBreath`、`hairWind`、`physics`、`idleSway`、`autoBlink` 全关掉，等物理停稳后形象完全静止，每帧逐像素相同。
+  - `talking`、`singing`、`thinking` 不是开关，是表演系统记下的状态：舞台只在 `talking` 或 `singing` 开着时让呼吸带上身，`thinking` 舞台不读。
 - 构造函数第四个参数是随机源（默认 `Math.random`），给定种子就能让眨眼可复现。
 - `getPose()` 取出最后画的一帧，`renderPose(pose)` 把它原样再画出来；`poseToJSON` / `poseFromJSON` 把姿势存成 JSON 再读回，`blendPoses(a, b, share)` 给两帧之间的帧。
 

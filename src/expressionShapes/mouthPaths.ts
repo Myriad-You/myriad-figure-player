@@ -1,7 +1,7 @@
-import type { MouthExpressionKind, Point } from './mouthShared'
+import type { MouthExpressionKind, MouthPathPoint } from './mouthShared'
 
 /** The silhouette each generated mouth is drawn in; other painters reuse it so morphs match. */
-export function mouthExpressionOuterPath(kind: MouthExpressionKind): readonly Point[] {
+export function mouthExpressionOuterPath(kind: MouthExpressionKind): readonly MouthPathPoint[] {
   return mouthOuterPath(kind)
 }
 
@@ -9,7 +9,7 @@ export function mouthExpressionOuterPath(kind: MouthExpressionKind): readonly Po
  * A consonant's narrow mouth is the open mouth drawn flatter, cavity and tongue
  * included, so speech that passes through it never swaps to unrelated art.
  */
-export function mouthOuterPath(kind: MouthExpressionKind): Point[] {
+export function mouthOuterPath(kind: MouthExpressionKind): MouthPathPoint[] {
   if (kind === 'wide') return wideOuterPath()
   if (kind === 'round') return roundOuterPath()
   if (kind === 'cry') return cryOuterPath()
@@ -18,7 +18,7 @@ export function mouthOuterPath(kind: MouthExpressionKind): Point[] {
   return openOuterPath()
 }
 
-function openOuterPath(): Point[] {
+function openOuterPath(): MouthPathPoint[] {
   return [
     [-0.2, -0.82],
     [0.22, -0.8],
@@ -35,7 +35,7 @@ function openOuterPath(): Point[] {
   ]
 }
 
-function wideOuterPath(): Point[] {
+function wideOuterPath(): MouthPathPoint[] {
   return [
     [-0.93, -0.06],
     [-0.76, -0.36],
@@ -52,7 +52,7 @@ function wideOuterPath(): Point[] {
   ]
 }
 
-function roundOuterPath(): Point[] {
+function roundOuterPath(): MouthPathPoint[] {
   return [
     [-0.4, -0.77],
     [-0.08, -0.91],
@@ -69,7 +69,7 @@ function roundOuterPath(): Point[] {
   ]
 }
 
-function cryOuterPath(): Point[] {
+function cryOuterPath(): MouthPathPoint[] {
   return [
     [-0.88, -0.18],
     [-0.78, -0.48],
@@ -90,8 +90,8 @@ function cryOuterPath(): Point[] {
   ]
 }
 
-function maniacOuterPath(): Point[] {
-  const output: Point[] = []
+function maniacOuterPath(): MouthPathPoint[] {
+  const output: MouthPathPoint[] = []
   appendCubic(
     output,
     [-0.82, -0.62],
@@ -111,8 +111,8 @@ function maniacOuterPath(): Point[] {
   return output
 }
 
-function sillyOuterPath(): Point[] {
-  const output: Point[] = []
+function sillyOuterPath(): MouthPathPoint[] {
+  const output: MouthPathPoint[] = []
   appendCubic(output, [-0.72, -0.36], [-0.5, -0.58], [-0.2, -0.48], [0, -0.38])
   appendCubic(output, [0, -0.38], [0.2, -0.5], [0.5, -0.58], [0.72, -0.34])
   appendCubic(output, [0.72, -0.34], [0.68, 0.2], [0.42, 0.68], [0, 0.79])
@@ -121,11 +121,11 @@ function sillyOuterPath(): Point[] {
 }
 
 function appendCubic(
-  output: Point[],
-  from: Point,
-  controlA: Point,
-  controlB: Point,
-  to: Point,
+  output: MouthPathPoint[],
+  from: MouthPathPoint,
+  controlA: MouthPathPoint,
+  controlB: MouthPathPoint,
+  to: MouthPathPoint,
 ): void {
   if (output.length === 0) output.push(from)
   for (let step = 1; step <= 7; step += 1) {

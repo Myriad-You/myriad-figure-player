@@ -2,7 +2,7 @@ import type { Anime25DArmSide } from './armVariantPresenter'
 import type { ContinuousMouthShape } from './continuousMouth'
 import type { Anime25DDriver } from './driver'
 import type { Anime25DRenderFrame } from './renderer'
-import type { ThinkingStickerFrame } from './thinkingSticker'
+import type { Anime25DSpinnerFrame } from './spinnerSticker'
 import { HIDDEN_OPACITY } from './mouthRuntime'
 
 // One drawn frame of the figure as plain data: everything its drawing reads that changes from frame to frame, taken
@@ -70,7 +70,7 @@ export interface Anime25DPose {
   layers: Anime25DLayerPose[]
   collar: Float32Array | null
   mouth: ContinuousMouthShape | null
-  sticker: ThinkingStickerFrame | null
+  sticker: Anime25DSpinnerFrame | null
   arms: Anime25DArmPose[]
 }
 
@@ -95,6 +95,12 @@ const DRIVER_JSON_KEYS = {
   bodyLean: 'body',
   torsoFollow: 'bodyYaw',
   rearHairSway: 'physAmp',
+  torsoBreath: 'idle',
+  physics: 'phys',
+  idleSway: 'rand',
+  autoBlink: 'blink',
+  followPointer: 'mouse',
+  talking: 'talk',
 } as const satisfies Partial<Record<keyof Anime25DDriver, string>>
 
 const DRIVER_FIELDS_BY_JSON_KEY: Readonly<Record<string, string>> = Object.fromEntries(

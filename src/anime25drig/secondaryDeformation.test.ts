@@ -172,7 +172,7 @@ test('primary shape and lateral hair motion retain the reference without fake do
     frame.expression.soft = Math.min(1, frame.expression.soft)
     frame.expression.fhSoft = Math.min(1, frame.expression.fhSoft)
     // The swing itself is the chain's, tested on its own below.
-    frame.expression.phys = false
+    frame.expression.physics = false
     for (const binding of bindings) {
       for (let row = 0; row <= 5; row += 1) {
         for (let column = 0; column <= 7; column += 1) {
@@ -227,7 +227,7 @@ test('a lock takes its chain\'s swing where it is along it, scaled only by the d
     binding.alongStrand[2] = 1
     binding.bangWeights = null
     const frame = secondaryFrame(0.4, 1)
-    frame.expression.phys = true
+    frame.expression.physics = true
     frame.bodyRotationCosine = 1
     frame.bodyRotationSine = 0
     const standard = front ? DEFAULT_FRONT_HAIR_SWAY : DEFAULT_REAR_HAIR_SWAY
@@ -257,7 +257,7 @@ test('a lock\'s width turns with its bend, as far as the lock is wide', () => {
   binding.alongStrand = new Float32Array(VERTEX_COUNT).fill(0.5)
   binding.bangWeights = null
   const frame = secondaryFrame(0.4, 1)
-  frame.expression.phys = true
+  frame.expression.physics = true
   frame.expression.rearHairSway = DEFAULT_REAR_HAIR_SWAY
   frame.bodyRotationCosine = 1
   frame.bodyRotationSine = 0
@@ -284,7 +284,7 @@ test('two-axis hair lag rotates into mesh space once and root pins hold both axe
   binding.alongStrand = new Float32Array(VERTEX_COUNT).fill(1)
   binding.bangWeights = null
   const frame = secondaryFrame(0.5, 1)
-  frame.expression.phys = true
+  frame.expression.physics = true
   frame.expression.rearHairSway = DEFAULT_REAR_HAIR_SWAY
   frame.shellActivation = 1
   for (const roll of [-0.3, 0, 0.3]) {
@@ -866,7 +866,7 @@ function secondaryFrame(
       bangR: Math.sin(progress * 5.6) * -0.64,
       fhAmp: 0.35 + progress * 1.4,
       fhSoft: 0.2 + progress * 0.7,
-      phys: frameIndex % 13 !== 0,
+      physics: frameIndex % 13 !== 0,
       rearHairSway: 0.45 + progress * 1.7,
       soft: 0.4 + progress * 1.3,
     },
@@ -1087,7 +1087,7 @@ function legacyDeformHairPoint(
     !binding.springs ||
     !binding.strandWeights ||
     !binding.alongStrand ||
-    !frame.expression.phys
+    !frame.expression.physics
   ) {
     return
   }

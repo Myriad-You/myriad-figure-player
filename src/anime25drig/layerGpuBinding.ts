@@ -11,7 +11,7 @@ import type { HairSurface } from './hairSurface'
 import type { HeadSilhouette } from './headTurn'
 import type { Anime25DLayerAttachment, Anime25DNeckwearBridge } from './layerAttachment'
 import type { Anime25DLayerBinding, Anime25DLayerSpringBinding } from './layerBinding'
-import type { Anime25DUpstreamFeatureInput } from './layerDeformation'
+import type { Anime25DEyeFeatureInput } from './layerDeformation'
 import type { Anime25DLayerDeformationExtension } from './layerDeformationPolicy'
 import type { GpuLayerBuildContext } from './layerGpuAssembly'
 import type { Anime25DMouthDeformationKind } from './mouthDeformation'
@@ -64,7 +64,7 @@ export interface Anime25DGpuLayer extends Anime25DRenderableLayer {
   shaderGlobalTransform: boolean
   localDynamic: boolean
   deformationExtensions: Anime25DLayerDeformationExtension[]
-  upstreamFeature: Anime25DUpstreamFeatureInput | null
+  eyeFeatureInput: Anime25DEyeFeatureInput | null
   mouthDeformation: Anime25DMouthDeformationKind | null
   expressionDeformation: Anime25DExpressionDeformationBinding | null
   secondaryDeformation: Anime25DSecondaryDeformationBinding

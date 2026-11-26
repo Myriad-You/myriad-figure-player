@@ -41,7 +41,7 @@ import { Anime25DPoseInertia } from './poseInertia'
 import { PosePresenter } from './posePresenter'
 import { createAnime25DRendererBindings, disposeAnime25DRendererBindings } from './renderer'
 import { resolveAnime25DRenderSurface, shouldApplyAnime25DResize } from './runtimePolicy'
-import { ThinkingSticker } from './thinkingSticker'
+import { SpinnerSticker } from './spinnerSticker'
 import { touchPointInView } from './touchHitTest'
 import { hitTestVisibleTouch } from './touchVisibility'
 import { compileProgram, loadImage } from './webglRuntime'
@@ -58,7 +58,7 @@ export interface Anime25DStageShared {
  * the driving writes `current` substep by substep and the stage draws what it says.
  */
 export class Anime25DStage<Measured = unknown> {
-  private readonly thinkingSticker = new ThinkingSticker()
+  private readonly spinnerSticker = new SpinnerSticker()
   private readonly gl: WebGL2RenderingContext
   private playback!: Anime25DPlayback
   private rigManifest: MeropeRigManifest | undefined
@@ -108,8 +108,8 @@ export class Anime25DStage<Measured = unknown> {
     time: 0,
     jawDrop: 0,
     jawOpen: 0,
-    stylizedMotion: null,
-    sillyMouthShare: 1,
+    stickerFaceMotion: null,
+    stickerMouthShare: 1,
   }
 
   constructor(
@@ -152,7 +152,7 @@ export class Anime25DStage<Measured = unknown> {
     try {
       bindings = createAnime25DRendererBindings(gl, this.program)
       this.rendererBindings = bindings
-      this.poses = new PosePresenter({ gl, program: this.program, bindings, armVariants: this.armVariants, sticker: this.thinkingSticker })
+      this.poses = new PosePresenter({ gl, program: this.program, bindings, armVariants: this.armVariants, sticker: this.spinnerSticker })
       this.adoptPackage(measurePackage(this.parts, playback, rigManifest))
     } catch (error) {
       // A failed constructor has no owner that can call dispose().
@@ -200,7 +200,7 @@ export class Anime25DStage<Measured = unknown> {
     this.armVariants.adopt(next.arms)
     this.driving.bindCapabilities(next.capabilities)
     this.touchAtlas = prepared.touchAtlas
-    this.thinkingSticker.setTint(next.tint)
+    this.spinnerSticker.setTint(next.tint)
     this.touchLayers = touchLayersFor(this.layers, this.collarClip)
     this.drawn = null
     this.poses.reset()
@@ -310,12 +310,11 @@ export class Anime25DStage<Measured = unknown> {
     return inspectAnime25DFrame({ current, layers, collarClip, renderFrame, torsoYaw: this.body.torsoTurn(), figurePitch: this.body.secondaryDeformationFrame.figure?.pitch?.angle })
   }
 
-  /** The package and the frame cost; `transferredEnergy` is the driving's, what its envelope moved between channels. */
-  debugSnapshot(transferredEnergy = 0): Anime25DDebugSnapshot {
+  /** The package, its motion envelope, the frame cost and the driver as it now stands. */
+  debugSnapshot(): Anime25DDebugSnapshot {
     return describeAnime25DPlayback(
       this.playback,
       this.motionEnvelopeProfile,
-      transferredEnergy,
       this.performanceTelemetry.observe(),
       { ...this.current },
     )
@@ -444,7 +443,7 @@ export class Anime25DStage<Measured = unknown> {
     this.touchLayers = []
     this.gl.deleteProgram(this.program)
     disposeAnime25DRendererBindings(this.gl, this.rendererBindings)
-    this.thinkingSticker.dispose(this.gl)
+    this.spinnerSticker.dispose(this.gl)
     // A canvas still in the document must keep the context
     try {
       const surface = this.gl.canvas
@@ -457,7 +456,7 @@ export class Anime25DStage<Measured = unknown> {
 
   /** One substep of the driver: the pose's inertia let go, the driving's step, posture, inertia again. */
   private smoothDriver(dt: number): void {
-    this.thinkingSticker.update(this.time, this.driving.thinkingLevel())
+    this.spinnerSticker.update(this.time, this.driving.spinnerLevel())
     this.poseInertia.release(this.current)
     this.driving.step(dt, this.time)
     this.body.stepPosture(dt, this.time)
@@ -476,8 +475,8 @@ export class Anime25DStage<Measured = unknown> {
     faceInput.time = this.time
     faceInput.jawDrop = body.jawDrop()
     faceInput.jawOpen = body.jawOpen()
-    faceInput.stylizedMotion = this.driving.stylizedMotion
-    faceInput.sillyMouthShare = this.driving.sillyMouthShare
+    faceInput.stickerFaceMotion = this.driving.stickerFaceMotion
+    faceInput.stickerMouthShare = this.driving.stickerMouthShare
     const deformationChanges = this.face.prepare(faceInput, this.layers)
     this.armVariants.follow(this.current)
     this.armVariants.applyOpacity(this.time)
@@ -505,13 +504,13 @@ export class Anime25DStage<Measured = unknown> {
     context.time = t
     context.deformationFrame = this.face.deformationFrame
     context.secondaryDeformationFrame = secondaryDeformationFrame
-    context.headJellyElement = this.body.headJellyFor(e.phys)
+    context.headJellyElement = this.body.headJellyFor(e.physics)
     context.headStretch = this.body.headStretch()
     deformLayers(
       this.layers,
       context,
       deformationChanges,
-      (layer) => (e.phys ? this.body.jellyFor(layer) : undefined),
+      (layer) => (e.physics ? this.body.jellyFor(layer) : undefined),
       work,
     )
     const settledBytes = settleDependentLayers(
@@ -558,7 +557,7 @@ export class Anime25DStage<Measured = unknown> {
       renderFrame,
       arms: this.atlasTexture ? this.armVariants.drawnArms() : [],
       sticker: this.atlasTexture
-        ? this.thinkingSticker.shown(this.time, this.driving.thinkingLevel(), point.x, point.y, faceWidth * 0.155)
+        ? this.spinnerSticker.shown(this.time, this.driving.spinnerLevel(), point.x, point.y, faceWidth * 0.155)
         : null,
     }
   }
@@ -568,7 +567,7 @@ export class Anime25DStage<Measured = unknown> {
     this.renderFrame.eyeCry = this.current.eyeCry
     const frame = this.frameNow()
     this.drawn = frame
-    drawFrame({ gl: this.gl, program: this.program, bindings: this.rendererBindings, armVariants: this.armVariants, sticker: this.thinkingSticker }, this.atlasTexture, frame, work)
+    drawFrame({ gl: this.gl, program: this.program, bindings: this.rendererBindings, armVariants: this.armVariants, sticker: this.spinnerSticker }, this.atlasTexture, frame, work)
     this.driving.drawn()
   }
 }

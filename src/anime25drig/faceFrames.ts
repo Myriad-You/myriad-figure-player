@@ -12,7 +12,7 @@ import type {
   MouthMorphState,
 } from './mouthRuntime'
 import type { SpeechMouthMaterial } from './mouthTransition'
-import type { StylizedExpressionMotion } from './stylizedExpressionMotion'
+import type { Anime25DStickerFaceMotion } from './stickerFaceMotion'
 import type { Anime25DPlayback } from './types'
 import { resolveAnime25DFaceFrame } from '../expressionShapes/faceFrame'
 import {
@@ -42,8 +42,8 @@ export interface FaceFrameInput {
   time: number
   jawDrop: number
   jawOpen: number
-  stylizedMotion: Readonly<StylizedExpressionMotion> | null
-  sillyMouthShare: number
+  stickerFaceMotion: Readonly<Anime25DStickerFaceMotion> | null
+  stickerMouthShare: number
 }
 
 /**
@@ -104,7 +104,7 @@ export class Anime25DFaceFrames {
       jawDrop: 0,
       jawOpen: 0,
       time: 0,
-      stylizedMotion: null,
+      stickerFaceMotion: null,
     }
     return { anchors: playback.anchors, mouthTransition, mouthMorphSources, deformationFrame }
   }
@@ -154,12 +154,12 @@ export class Anime25DFaceFrames {
     deformationFrame.jawDrop = jawDrop
     deformationFrame.jawOpen = jawOpen
     deformationFrame.time = t
-    deformationFrame.stylizedMotion = input.stylizedMotion
+    deformationFrame.stickerFaceMotion = input.stickerFaceMotion
     writeAnime25DOpacityFrame(
       this.opacityFrame,
       e,
       this.activeMouthMaterial,
-      input.sillyMouthShare,
+      input.stickerMouthShare,
       mouthTransition,
       this.continuousMouth !== null,
     )
@@ -169,7 +169,7 @@ export class Anime25DFaceFrames {
       this.mouthMorph,
       jawDrop,
       jawOpen,
-      input.stylizedMotion,
+      input.stickerFaceMotion,
       this.irisRebound,
     )
     for (const layer of layers) {

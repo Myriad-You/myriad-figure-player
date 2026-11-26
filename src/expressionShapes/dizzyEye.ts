@@ -1,10 +1,6 @@
-export interface RgbColor {
-  red: number
-  green: number
-  blue: number
-}
+import type { Anime25DRgb } from './rgb'
 
-const DEFAULT_DIZZY_TINT: Readonly<RgbColor> = {
+const DEFAULT_DIZZY_TINT: Readonly<Anime25DRgb> = {
   red: 54,
   green: 47,
   blue: 72,
@@ -31,7 +27,7 @@ export function dizzyEyeDisplayScale(
 
 export function sampleDizzyEyeTint(
   rgba: Uint8ClampedArray | undefined,
-): RgbColor {
+): Anime25DRgb {
   if (!rgba) return { ...DEFAULT_DIZZY_TINT }
   let red = 0
   let green = 0

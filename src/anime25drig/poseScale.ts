@@ -28,7 +28,7 @@ export function headRollForRadians(radians: number): number {
   return Math.sign(radians) * (HEAD_TILT_KNEE + (1 - HEAD_TILT_KNEE) * past)
 }
 
-/** Upper-body lean at `body` = ±1, in radians; the canvas cut stays put. */
+/** Upper-body lean at `bodyLean` = ±1, in radians; the canvas cut stays put. */
 export const BODY_ROLL_RADIANS = 0.05
 
 /**

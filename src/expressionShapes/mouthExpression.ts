@@ -1,5 +1,6 @@
-import type { MouthExpressionPalette, Rgb } from './mouthShared'
-import { mixColor } from './mouthShared'
+import type { MouthExpressionPalette } from './mouthShared'
+import type { Anime25DRgb } from './rgb'
+import { mixRgb } from './rgb'
 
 export { mouthExpressionOuterPath } from './mouthPaths'
 export { type MouthExpressionPalette } from './mouthShared'
@@ -19,7 +20,7 @@ export function sampleMouthExpressionPalette(
       fill: FALLBACK_FILL,
     }
   }
-  const visible: Array<Rgb & { luminance: number }> = []
+  const visible: Array<Anime25DRgb & { luminance: number }> = []
   for (let index = 0; index < source.length; index += 4) {
     if (source[index + 3] < 40) continue
     const red = source[index]
@@ -47,21 +48,21 @@ export function sampleMouthExpressionPalette(
   const lineLuminance = luminance(sampledLine)
   const line =
     lineLuminance <= 145
-      ? mixColor(sampledLine, FALLBACK_LINE, 0.18)
+      ? mixRgb(sampledLine, FALLBACK_LINE, 0.18)
       : FALLBACK_LINE
   const warmPixels = ranked.filter(
     (color) => color.red > color.green * 1.04 && color.red > color.blue * 0.96,
   )
   const sampledFill = average(warmPixels.length > 0 ? warmPixels : ranked)
-  const fill = mixColor(sampledFill, FALLBACK_FILL, 0.72)
+  const fill = mixRgb(sampledFill, FALLBACK_FILL, 0.72)
   return {
     line,
-    cavity: mixColor(line, FALLBACK_CAVITY, 0.58),
+    cavity: mixRgb(line, FALLBACK_CAVITY, 0.58),
     fill,
   }
 }
 
-function average(colors: readonly Rgb[]): Rgb {
+function average(colors: readonly Anime25DRgb[]): Anime25DRgb {
   if (colors.length === 0) return FALLBACK_FILL
   let red = 0
   let green = 0
@@ -78,6 +79,6 @@ function average(colors: readonly Rgb[]): Rgb {
   }
 }
 
-function luminance(color: Readonly<Rgb>): number {
+function luminance(color: Readonly<Anime25DRgb>): number {
   return color.red * 0.299 + color.green * 0.587 + color.blue * 0.114
 }

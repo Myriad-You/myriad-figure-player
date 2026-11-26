@@ -1,6 +1,6 @@
 import type { Anime25DEyeAnchor, Anime25DPlaybackLayer } from './types'
 import type { CroppedLayerPixels } from './webglRuntime'
-import { dilate, erode, insideDistance } from './pixelMasks'
+import { dilate, erode, maskInsideDistance } from './pixelMasks'
 
 type Box = Pick<Anime25DPlaybackLayer, 'x' | 'y' | 'w' | 'h'>
 
@@ -67,7 +67,7 @@ export function fillHiddenSkin(
   const skin = samples.filter((_, i) => lightness[i] >= shadow)
   // A plane per channel over the face, clamped to what the skin there spans.
   const field = [0, 1, 2].map((channel) => fitPlane(skin, pixels, channel, width, height))
-  const distance = insideDistance(hidden, width, height)
+  const distance = maskInsideDistance(hidden, width, height)
   const feather = Math.max(1, FEATHER / pixelX)
   const out = new Uint8ClampedArray(pixels)
   for (let p = 0; p < width * height; p++) {
@@ -138,7 +138,7 @@ export function clearHiddenTemples(
   // It fades in from the skin that stays, and goes all at once out to the drawing's edge.
   const cleared = new Uint8Array(width * height)
   for (let p = 0; p < width * height; p++) cleared[p] = temple[p] || pixels[p * 4 + 3] === 0 ? 1 : 0
-  const distance = insideDistance(cleared, width, height)
+  const distance = maskInsideDistance(cleared, width, height)
   const feather = Math.max(1, FEATHER / pixelX)
   const out = new Uint8ClampedArray(pixels)
   for (let p = 0; p < width * height; p++) {

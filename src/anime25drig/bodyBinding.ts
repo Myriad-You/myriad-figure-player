@@ -188,7 +188,7 @@ export function measureBody(
   }
   const hairSpringFrame: Anime25DHairSpringFrame = {
     enabled: true,
-    idle: true,
+    wind: true,
     faceScale: anchors.faceScale,
     time: 0,
     frontSoft: 0,

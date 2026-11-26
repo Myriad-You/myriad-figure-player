@@ -233,7 +233,7 @@ function expressionFrame(
     faceAxes: { cos: 1, sin: 0 },
     faceScale: 0.83,
     mouthMorph,
-    stylizedMotion: withMotion
+    stickerFaceMotion: withMotion
       ? {
           angerMarkOffsetY: Math.sin(progress * 7.1) * 1.2,
           angerMarkRotation: Math.cos(progress * 4.9) * 0.16,
@@ -294,7 +294,7 @@ function legacyDeformExpressionPoint(
     point.y += tearVertical * flowWeight
     return
   }
-  const motion = frame.stylizedMotion
+  const motion = frame.stickerFaceMotion
   if (!motion) return
   if (kind === 'silly-eye') {
     const scale = 0.84 + motion.sillyEyeScale * 0.16

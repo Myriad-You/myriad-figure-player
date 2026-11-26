@@ -69,18 +69,18 @@ test('the swing does not depend on the frame rate', () => {
   }
 })
 
-test('idle air sways a lock by a few pixels whatever its stiffness, and still air not at all', () => {
-  for (const idle of [true, false]) {
+test('wind sways a lock by a few pixels whatever its stiffness, and still air not at all', () => {
+  for (const wind of [true, false]) {
     const layers = springLayers()
     const springs = layers.flatMap(layer => layer.springs ?? [])
-    const frame = { ...hairFrame(), idle }
+    const frame = { ...hairFrame(), wind }
     let most = 0
     for (let i = 0; i < 1200; i++) {
       frame.time = i / 60
       stepAnime25DHairLayerSprings(layers, frame, 1 / 60)
       for (const spring of springs) most = Math.max(most, Math.abs(tip(spring).x))
     }
-    if (idle) assert.ok(most > 1 && most < 12, `idle sway ${most}`)
+    if (wind) assert.ok(most > 1 && most < 12, `wind sway ${most}`)
     else assert.equal(most, 0)
   }
 })
@@ -164,7 +164,7 @@ test('length response scaling preserves the authored damping ratio', () => {
 })
 
 function hairFrame() {
-  return { enabled: true, idle: false, faceScale: 1, time: 0, frontSoft: 0.4, rearSoft: 2, tilt: 0 }
+  return { enabled: true, wind: false, faceScale: 1, time: 0, frontSoft: 0.4, rearSoft: 2, tilt: 0 }
 }
 
 function strand(phase: number, scale: number, lengthRatio = 1) {

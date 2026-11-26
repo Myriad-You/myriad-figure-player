@@ -1,9 +1,9 @@
 import type { Anime25DDriver } from './driver'
 import type { Anime25DExpressionDeformationKind } from './expressionDeformation'
-import type { Anime25DUpstreamFeatureKind } from './layerDeformation'
+import type { Anime25DEyeFeatureKind } from './layerDeformation'
 import type { Anime25DMouthDeformationKind } from './mouthDeformation'
 import type { MouthMorphState } from './mouthRuntime'
-import type { StylizedExpressionMotion } from './stylizedExpressionMotion'
+import type { Anime25DStickerFaceMotion } from './stickerFaceMotion'
 import type { Anime25DFade } from './types'
 
 export const ANIME25D_DEFORMATION_EYE = 1 << 0
@@ -78,7 +78,7 @@ const STYLIZED_MOTION_KEYS = [
   'speechlessSweatOffsetX',
   'speechlessSweatOffsetY',
   'speechlessSweatRotation',
-] as const satisfies readonly (keyof StylizedExpressionMotion)[]
+] as const satisfies readonly (keyof Anime25DStickerFaceMotion)[]
 
 export interface Anime25DDeformationChangeState {
   initialized: boolean
@@ -119,7 +119,7 @@ export function captureAnime25DDeformationChanges(
   mouthMorph: Readonly<MouthMorphState>,
   jawDrop: number,
   jawOpen: number,
-  stylizedMotion: Readonly<StylizedExpressionMotion> | null,
+  stickerFaceMotion: Readonly<Anime25DStickerFaceMotion> | null,
   irisRebound?: Readonly<{ x: number; y: number }>,
 ): number {
   const firstFrame = !state.initialized
@@ -152,7 +152,7 @@ export function captureAnime25DDeformationChanges(
   }
   state.jawDrop = jawDrop
   state.jawOpen = jawOpen
-  if (captureStylizedValues(stylizedMotion, state.stylized) || firstFrame) {
+  if (captureStylizedValues(stickerFaceMotion, state.stylized) || firstFrame) {
     changes |= ANIME25D_DEFORMATION_STYLIZED
   }
   state.initialized = true
@@ -164,13 +164,13 @@ export function resolveAnime25DDeformationDependencies(input: {
   fade: Anime25DFade | null
   shaderGlobalTransform: boolean
   localDynamic: boolean
-  upstreamFeatureKind: Anime25DUpstreamFeatureKind | null
+  eyeFeatureKind: Anime25DEyeFeatureKind | null
   expressionDeformationKind: Anime25DExpressionDeformationKind | null
   mouthDeformationKind: Anime25DMouthDeformationKind | null
 }): number {
   if (!input.localDynamic || !input.shaderGlobalTransform) return 0
   let dependencies = 0
-  if (input.upstreamFeatureKind) dependencies |= ANIME25D_DEFORMATION_EYE
+  if (input.eyeFeatureKind) dependencies |= ANIME25D_DEFORMATION_EYE
 
   switch (input.expressionDeformationKind) {
     case 'cry-eye':
@@ -259,7 +259,7 @@ function captureValues<TValue extends object, TKey extends keyof TValue>(
 }
 
 function captureStylizedValues(
-  current: Readonly<StylizedExpressionMotion> | null,
+  current: Readonly<Anime25DStickerFaceMotion> | null,
   previous: Float64Array,
 ): boolean {
   let changed = false

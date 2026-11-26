@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { sampleDizzyEyeTint } from '../expressionShapes/dizzyEye'
-import { ThinkingSticker } from './thinkingSticker'
+import { SpinnerSticker } from './spinnerSticker'
 
-test('thinking sticker fades, rotates, reuses GPU resources and releases them', () => {
+test('spinner sticker fades, rotates, reuses GPU resources and releases them', () => {
   let programs = 0
   let draws = 0
   let deleted = 0
@@ -51,7 +51,7 @@ test('thinking sticker fades, rotates, reuses GPU resources and releases them', 
     },
     deleteVertexArray() {},
   } as unknown as WebGL2RenderingContext
-  const sticker = new ThinkingSticker()
+  const sticker = new SpinnerSticker()
   sticker.setTint(sampleDizzyEyeTint(new Uint8ClampedArray([72, 41, 32, 255, 255, 255, 255, 0])))
   const draw = (t: number, active: number) => {
     const shown = sticker.shown(t, active, 100, 100, 20)

@@ -1,4 +1,4 @@
-import type { StylizedExpressionMotion } from './stylizedExpressionMotion'
+import type { Anime25DStickerFaceMotion } from './stickerFaceMotion'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
@@ -78,7 +78,7 @@ test('change capture reports only geometry inputs that actually moved', () => {
       { ...MORPH, openMix: 0.4 },
       2,
       0.5,
-      { sillyEyeScale: 0.7 } as StylizedExpressionMotion,
+      { sillyEyeScale: 0.7 } as Anime25DStickerFaceMotion,
     ),
     ANIME25D_DEFORMATION_MOUTH |
       ANIME25D_DEFORMATION_JAW |
@@ -93,7 +93,7 @@ test('dependency plans classify static, eye, mouth, and timed geometry', () => {
     fade: null,
     shaderGlobalTransform: true,
     localDynamic: true,
-    upstreamFeatureKind: null,
+    eyeFeatureKind: null,
     expressionDeformationKind: null,
     mouthDeformationKind: null,
   } as const
@@ -101,7 +101,7 @@ test('dependency plans classify static, eye, mouth, and timed geometry', () => {
   assert.equal(
     resolveAnime25DDeformationDependencies({
       ...base,
-      upstreamFeatureKind: 'eye-open-iris',
+      eyeFeatureKind: 'eye-open-iris',
     }),
     ANIME25D_DEFORMATION_EYE,
   )

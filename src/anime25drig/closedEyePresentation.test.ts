@@ -7,8 +7,8 @@ import { ClosedEyePresentation } from './closedEyePresentation'
 import { IDENTITY_DRIVER } from './driver'
 import { stepAnime25DBlink } from './driverComposition'
 import {
-  deformAnime25DUpstreamFeaturePoint,
-  resolveAnime25DUpstreamFeature,
+  deformAnime25DEyeFeaturePoint,
+  resolveAnime25DEyeFeature,
 } from './layerDeformation'
 import { createAnime25DOpacityFrame, fadeOpacityFromFrame, writeAnime25DOpacityFrame } from './mouthRuntime'
 
@@ -21,10 +21,10 @@ function fadeOpacity(
   layer: Pick<Anime25DPlaybackLayer, 'fade' | 'side'>,
   driver: Readonly<Anime25DDriver>,
   activeMouthMaterial?: SpeechMouthMaterial,
-  sillyMouthShare = 1,
+  stickerMouthShare = 1,
 ): number {
   const frame = createAnime25DOpacityFrame()
-  writeAnime25DOpacityFrame(frame, driver, activeMouthMaterial as SpeechMouthMaterial, sillyMouthShare)
+  writeAnime25DOpacityFrame(frame, driver, activeMouthMaterial as SpeechMouthMaterial, stickerMouthShare)
   return fadeOpacityFromFrame(layer, frame)
 }
 
@@ -71,7 +71,7 @@ test('automatic blinks keep ordinary art; deliberate closure selects alternate p
 test('alternate closed art uses exactly the ordinary scale, angle and eye-follow deformation', () => {
   for (const role of ['eye-close', 'eye-close2']) {
     assert.equal(
-      resolveAnime25DUpstreamFeature({ role, fade: 'eyeClose' }, true),
+      resolveAnime25DEyeFeature({ role, fade: 'eyeClose' }, true),
       'eye-close',
     )
   }
@@ -90,7 +90,7 @@ test('alternate closed art uses exactly the ordinary scale, angle and eye-follow
     },
   }
   const point = { x: 15, y: 11 }
-  deformAnime25DUpstreamFeaturePoint(point, input)
+  deformAnime25DEyeFeaturePoint(point, input)
   assert.notDeepEqual(point, { x: 15, y: 11 })
   assert.ok(Number.isFinite(point.x) && Number.isFinite(point.y))
 })
