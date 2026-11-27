@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { meropeStateEventDetail, sanitizePerformanceDirective } from './directive'
+import { meropePerformanceEventDetail, meropeStateEventDetail, sanitizePerformanceDirective } from './directive'
 
 test('phrase-only delivery crosses the event boundary without inventing a baseline', () => {
   const wire = {
@@ -192,4 +192,23 @@ test('accepts stylized semantic performance cues', () => {
     })
     assert.equal(performance?.plan.cues[0]?.intent, intent)
   }
+})
+
+test('bounds production performance events and defaults their source', () => {
+  assert.deepEqual(
+    meropePerformanceEventDetail({
+      text: '  太好了！  ',
+      source: 'unknown',
+      messageId: ' message-1 ',
+    }),
+    { text: '太好了！', source: 'reply', messageId: 'message-1' },
+  )
+  assert.equal(meropePerformanceEventDetail({ text: '   ' }), null)
+  assert.equal(meropePerformanceEventDetail(null), null)
+})
+
+test('performance envelope carries a bounded run id independently of the semantic director plan', () => {
+  const event = meropePerformanceEventDetail({ text: 'reply', source: 'reply', runId: `  ${'r'.repeat(200)}  ` })
+  assert.equal(event?.runId, 'r'.repeat(160))
+  assert.equal(meropePerformanceEventDetail({ text: 'reply', runId: 42 })?.runId, undefined)
 })
