@@ -9,6 +9,13 @@ import { sampleTouchAlpha, touchPointInView } from './touchHitTest'
 
 export type PoseCorrectionSurface = PoseCorrection['surface']
 
+/** A correctable point under the pointer: its surface and rest place in head radii. */
+export interface PoseCorrectionStagePick {
+  surface: PoseCorrectionSurface
+  x: number
+  y: number
+}
+
 /** What the stage reads of a layer to pick and show correction points. */
 export interface PoseCorrectionStageLayer {
   rest: Float32Array
@@ -96,7 +103,7 @@ export function pickPoseCorrectionPoint(
   frame: StageFrame,
   head: Readonly<Anime25DShellEllipsoid>,
   atlas: PoseCorrectionAtlas | null,
-): { surface: PoseCorrectionSurface; x: number; y: number } | null {
+): PoseCorrectionStagePick | null {
   for (let index = layers.length - 1; index >= 0; index--) {
     const layer = layers[index]
     if (!layer.surface || !(layer.frameOpacity >= 0.004)) continue
@@ -277,7 +284,7 @@ export function pickPoseCorrectionAtClient(
   source: PoseCorrectionStageSource,
   clientX: number,
   clientY: number,
-): { surface: PoseCorrectionSurface; x: number; y: number } | null {
+): PoseCorrectionStagePick | null {
   const rect = poseCorrectionStageRect(source)
   const point = rect && touchPointInView(clientX, clientY, rect, {
     width: source.frame.viewWidth,
