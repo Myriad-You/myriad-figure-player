@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsdown'
 
-// The three entries as ESM with their declarations and source maps; code they share lands in common chunks, so a
+// The four entries as ESM with their declarations and source maps; code they share lands in common chunks, so a
 // class reached through two entries is one class.
 
 /** Kept by minifiers (`/*!`), so a bundle that takes any chunk keeps the third-party notice with it. */
@@ -14,6 +14,7 @@ const LICENSE_BANNER = `/*!
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
+    contract: 'src/contract.ts',
     workbench: 'src/workbench.ts',
     internals: 'src/internals.ts',
   },

@@ -40,10 +40,25 @@ tuning storage, camera input and recording are not included.
 
 --------------------------------------------------------------------------------
 contracts/merope_rig_contract.json
-A byte copy of shared/merope_rig_contract.json in myriad-core
-(https://github.com/Myriad-You/myriad-core), revision 66a760c6f. Not edited
-here. Its sole author licenses this file under the MIT License for this
-package; the copy in myriad-core stays under that repository's license.
+contracts/merope_performance_contract.json
+Byte copies of shared/merope_rig_contract.json and
+shared/merope_performance_contract.json in myriad-core
+(https://github.com/Myriad-You/myriad-core), revision ed49fa7ea (recorded in
+contracts/core-revision, which CI checks the copies against). Not edited here.
+Their sole author licenses these files under the MIT License for this package;
+the copies in myriad-core stay under that repository's license.
+
+--------------------------------------------------------------------------------
+src/performance/ (vocabulary.ts, types.ts, mood.ts, contract.ts, directive.ts
+and their tests), src/rig/manifestValidation.ts, src/rig/importSource.ts,
+src/rig/authoredExpression.ts, src/rig/documentTurnKeyforms.ts, the version and
+limit constants in src/rig/contract.ts from RIG_SCHEMA_VERSION on, fringeFits in
+src/anime25drig/playbackValidation.ts, and the rig contract tests in
+src/rig/contract.test.ts
+Moved here from @myriad/figure (https://github.com/Myriad-You/myriad-figure),
+revision d029b6cbe, with only their imports changed. Their sole author licenses
+them under the MIT License for this package; the copies in myriad-figure stay
+under that repository's license.
 
 --------------------------------------------------------------------------------
 Anime2.5DRig license text:

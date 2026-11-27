@@ -20,6 +20,8 @@ jobs:
           # packageManager names pnpm, which is not installed yet at this step.
           package-manager-cache: false
       - run: npm install --global pnpm@11.25.0
+      # contracts/ are byte copies of myriad-core files at contracts/core-revision.
+      - run: sh scripts/check-contract-copies.sh
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
