@@ -1,8 +1,7 @@
 {
   "name": "@myriad-you/figure-player",
   "type": "module",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "packageManager": "pnpm@11.25.0",
   "description": "The render layer of Myriad's 2.5D figure: a canvas stage that draws a rig package as a driving moves it.",
   "author": "Myriad Contributors",
