@@ -9,13 +9,6 @@ import type {
 import contract from '../../contracts/merope_performance_contract.json' with { type: 'json' }
 import { CUE_INTENTS, isWord, PHRASE_INTENTS, SCORE_DIRECTIONS, SCORE_SIDES } from './vocabulary'
 
-export {
-  BASELINE_EXPRESSIONS as PERFORMANCE_BASELINE_EXPRESSIONS,
-  CUE_INTENTS as PERFORMANCE_CUE_INTENTS,
-  INTERRUPT_MODES as PERFORMANCE_INTERRUPT_MODES,
-  POSTURES as PERFORMANCE_POSTURES,
-} from './vocabulary'
-
 export const BODY_CONTROLS = contract.bodyControls
 export const BODY_POSE_TIMING = contract.bodyPoseTiming
 

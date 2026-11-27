@@ -3,17 +3,17 @@ import test from 'node:test'
 import {
   FACE_PRESETS,
   faceLife,
-  PERFORMANCE_CUE_INTENTS,
   performanceContractIsComplete,
   performanceCuePriority,
   SCORE_TIMING,
 } from './contract'
+import { CUE_INTENTS } from './vocabulary'
 
 test('defines one priority for every semantic performance cue', () => {
   assert.equal(performanceContractIsComplete(), true)
   assert.equal(
-    new Set(PERFORMANCE_CUE_INTENTS).size,
-    PERFORMANCE_CUE_INTENTS.length,
+    new Set(CUE_INTENTS).size,
+    CUE_INTENTS.length,
   )
   assert.equal(performanceCuePriority('respond'), 1)
   assert.equal(performanceCuePriority('speechless'), 2)

@@ -1,6 +1,7 @@
 // The words, bounds and checks of the two contracts a figure is spoken to in: the performance contract (what
 // the director sends, what her state reports) and the rig contract (a rig's versions, limits and manifest, what
-// an import hands the importer). Both are byte copies of myriad-core's, in contracts/. A host that directs a
+// an import hands the importer; the manifest's types and limits are here whole, so checking one needs
+// nothing else). Both are byte copies of myriad-core's, in contracts/. A host that directs a
 // figure, stores her rig or takes one in reads and checks them here, whatever plays the figure. Unstable: names
 // and shapes here may change in any release before 1.0.
 
@@ -14,11 +15,6 @@ export {
   facePose,
   faceShift,
   MAX_FACES_PASSED,
-  PERFORMANCE_BASELINE_EXPRESSIONS,
-  PERFORMANCE_CUE_INTENTS,
-  PERFORMANCE_INTERRUPT_MODES,
-  PERFORMANCE_POSTURES,
-  performanceContractIsComplete,
   performanceCuePriority,
   PLAIN_FACE,
   sanitizeBodyPose,
@@ -28,15 +24,14 @@ export {
   SCORE_TIMING,
   tierExtent,
 } from './performance/contract'
-export type { MeropeStateEventDetail } from './performance/directive'
-export { meropeStateEventDetail, sanitizePerformanceDirective } from './performance/directive'
+export type { MeropePerformanceEventDetail, MeropeStateEventDetail } from './performance/directive'
+export { meropePerformanceEventDetail, meropeStateEventDetail, sanitizePerformanceDirective } from './performance/directive'
 export type { MoodBand } from './performance/mood'
 export { moodBand } from './performance/mood'
 export type {
   BodyControl,
   BodyPose,
   MeropeActivity,
-  MoodBandName,
   MoodTransition,
   PerformanceBaseline,
   PerformanceCue,
@@ -55,13 +50,17 @@ export type {
   ScoreSide,
   SpeechPhrase,
 } from './performance/types'
-export { BASELINE_EXPRESSIONS, CUE_INTENTS, INTERRUPT_MODES, isWord, PHRASE_INTENTS, POSTURES, SCORE_DIRECTIONS, SCORE_SIDES } from './performance/vocabulary'
+export { BASELINE_EXPRESSIONS, CUE_INTENTS, INTERRUPT_MODES, PHRASE_INTENTS, POSTURES, SCORE_DIRECTIONS, SCORE_SIDES } from './performance/vocabulary'
 export type { AuthoredExpressionKind } from './rig/authoredExpression'
 export { AUTHORED_EXPRESSION_KINDS } from './rig/authoredExpression'
+export type { CharacterAssetProfile } from './rig/contract'
 export {
+  CHARACTER_ASSET_PROFILES,
   characterAssetProfileOf,
   isCharacterAssetProfile,
+  MAX_RIG_BONES,
   MAX_RIG_COLLISION_VOLUMES,
+  MAX_RIG_PARTS,
   MAX_RIG_TEXTURES,
   MAX_RIG_TOTAL_VERTICES,
   MAX_RIG_VERTICES_PER_PART,
@@ -71,8 +70,12 @@ export {
   RIG_PRESENTATION_SLOTS,
   RIG_SCHEMA_VERSION,
   RIG_SECONDARY_PART_PATTERNS,
+  RIG_SEMANTIC_BONE_ROLES,
+  RIG_SEMANTIC_CHAIN_ROLES,
 } from './rig/contract'
 export type { DocumentTurnKeyforms } from './rig/documentTurnKeyforms'
 export { isDocumentTurnKeyforms } from './rig/documentTurnKeyforms'
 export type { MeropeRigImportSource, RigBoneHandle, RigLayerMeshSource, RigLayerSource, RigRect } from './rig/importSource'
-export { isLiveMeropeManifest, isRigManifest, sameLiveFaceRuntime } from './rig/manifestValidation'
+export { isLiveMeropeManifest, isRigManifest } from './rig/manifestValidation'
+export type { MeropeRigManifest, RigBone, RigCollisionVolume, RigMotionProfile, RigOutfitProfile, RigOutfitTopology, RigPart, RigPoint, RigQuality, RigSemanticAnchor, RigSemanticBoneRole, RigSemanticChainRole, RigSemantics, RigSize, RigSpatialProfile, RigTexture, RigVertex } from './rig/types'
+export { RIG_OUTFIT_TOPOLOGIES } from './rig/types'

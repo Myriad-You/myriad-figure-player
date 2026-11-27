@@ -54,8 +54,8 @@ main()
 
 `package.json` 的 `exports` 有四个入口，目录里别的文件都是内部的：
 
-- `@myriad-you/figure-player`（`src/index.ts`）：播放用的一切——`FigurePlayer`、舞台 `Anime25DStage`、驱动接口和基础驱动、姿势（`Anime25DPose`）的 `poseToJSON` / `poseFromJSON` / `blendPoses`、错误 `FigureError`。类型只有用这些时要写出名字的那些（`Anime25DPlayback`、`MeropeRigManifest`、`Anime25DDriver`、驱动接口、姿势、调试和检视的结果）；包格式和清单的各个部分的类型在 `./internals`。
-- `@myriad-you/figure-player/contract`（`src/contract.ts`）：形象被说话时用的两份契约的词、界限和检查，不管是谁在演她：表演契约（导演发来的表演指令和她的状态，`sanitizePerformanceDirective`、`meropeStateEventDetail`、心情分档 `moodBand`、表情预设和程度 `FACE_PRESETS`、`tierExtent`，以及这些的类型）和 rig 契约（版本和上限、清单检查 `isRigManifest`、`isLiveMeropeManifest`、导入收的 `MeropeRigImportSource`、重画表情的种类、文档上量的转头关键形 `isDocumentTurnKeyforms`）。导演她、存她的 rig、收一套 rig 的宿主在这里读和查。不作稳定承诺。
+- `@myriad-you/figure-player`（`src/index.ts`）：播放用的一切——`FigurePlayer`、舞台 `Anime25DStage`、驱动接口和基础驱动、姿势（`Anime25DPose`）的 `poseToJSON` / `poseFromJSON` / `blendPoses`、错误 `FigureError`，和宿主判断换装后能不能接着用同一个舞台的 `sameLiveFaceRuntime`。类型只有用这些时要写出名字的那些（`Anime25DPlayback`、`Anime25DDriver`、驱动接口、姿势、调试和检视的结果）；包格式的各个部分的类型在 `./internals`，rig 清单 `MeropeRigManifest` 和它的各个部分在 `./contract`。
+- `@myriad-you/figure-player/contract`（`src/contract.ts`）：形象被说话时用的两份契约的词、界限和检查，不管是谁在演她：表演契约（导演发来的表演指令、页面交给形象的表演信封和她的状态，`sanitizePerformanceDirective`、`meropePerformanceEventDetail`、`meropeStateEventDetail`、心情分档 `moodBand`、表情预设和程度 `FACE_PRESETS`、`tierExtent`，以及这些的类型）和 rig 契约（清单 `MeropeRigManifest` 和它各部分的类型、版本和上限、身形 `CHARACTER_ASSET_PROFILES`、语义角色、清单检查 `isRigManifest`、`isLiveMeropeManifest`、导入收的 `MeropeRigImportSource`、重画表情的种类、文档上量的转头关键形 `isDocumentTurnKeyforms`）。导演她、存她的 rig、收一套 rig 的宿主在这里读和查，查一份清单不用别的入口。不作稳定承诺。
 - `@myriad-you/figure-player/workbench`（`src/workbench.ts`）：给 rig 制作工具用的，播放的页面用不到：舞台交给工具的当前帧和 GPU 图层（`PoseCorrectionStageSource`，经 `Anime25DStage.poseStage()` 取）、姿势修正的拾取与投影、做姿势修正的几何（脸和头顶上有名字的部位、新补丁的范围、修正挂在哪个姿势上、预览和过渡用的驱动、补丁的界限、未保存的改动数）、`WORKBENCH_DRIVER`、运动包络探针、写进每个包的参照项目名称、许可和版权。`Anime25DStage.previewPoseCorrections()` 也只给工具用。这个入口不作任何稳定承诺。
 - `@myriad-you/figure-player/internals`（`src/internals.ts`）：舞台内部一些较低层的零件，是在舞台之上自己写一整套驱动的宿主用得到的那些：包格式的类型和词表（包括从图层名读出角色和分组）、驱动参数的响应与合成步骤、变形和姿势的辅助，以及舞台自己的表情图形辅助——它们读取图上的像素（嘴唇、牙齿、线条的颜色），在载入和绘制时画出生成的嘴形，并给出生成的眼睛图形按眼睛大小取的比例。这份清单不是设计好的工具集，也不完整；不作任何稳定承诺，名字和形状在任何版本都可能变。这个入口本身不含表演系统，也不含做 rig 的工具。只播放的页面用不到。
 
@@ -134,7 +134,7 @@ pnpm build   # dist/：三个入口的 ESM、.d.ts 和 source map
 
 `package.json` 的 `exports` 指向 `src/`，好让从 git 装的宿主直接用源码；打包发布时 `publishConfig` 里的 `exports` 换成 `dist/`。所以要用 `pnpm pack` / `pnpm publish` 打包，`npm pack` 不会换。`.github/workflows/release.yml` 在推送版本标签时构建并发布（npm 可信发布，带 provenance）；`package.json` 标着 `"private": true`、版本还是 `0.0.0`、标签和版本不符、或者标签的提交不在 `main` 上时，它在构建之前就停下。构建出的 JS 每个文件开头都带着第三方许可的说明（`/*! … */`），`LICENSE` 末尾附有第三方的 MIT 全文，`NOTICE` 说明哪些部分来自哪里。webpack（terser）压缩时把这段说明放进 `*.LICENSE.txt`；Vite 8 压缩时去掉所有许可注释，要用 `build.license: true`，它生成的 `.vite/license.md` 收录本包的 `LICENSE`，第三方全文也在里面。
 
-`contracts/merope_rig_contract.json` 和 `contracts/merope_performance_contract.json` 是 [myriad-core](https://github.com/Myriad-You/myriad-core) `shared/` 里 rig 契约和表演契约的逐字节副本，不手改；`./contract` 的词表由它们推导，`src/performance/vocabulary.contract.test.ts` 逐字对照表演契约。
+`contracts/merope_rig_contract.json` 和 `contracts/merope_performance_contract.json` 是 [myriad-core](https://github.com/Myriad-You/myriad-core) `shared/` 里 rig 契约和表演契约的逐字节副本，不手改；`./contract` 的词表由它们推导，`src/performance/vocabulary.contract.test.ts` 逐字对照表演契约。三份副本对应的核心提交记在 `contracts/core-revision`，CI 的 `scripts/check-contract-copies.sh` 按那个提交逐字节对照核心的文件。
 
 `contracts/figure_package_conformance.json` 是共用核心 `crates/conformance/v1/figure/package.json` 的逐字节副本：形象包的接受和拒收用例，服务端的校验和本包的测试都跑，同样不手改。
 

@@ -1,4 +1,5 @@
 import type performanceContract from '../../contracts/merope_performance_contract.json'
+import type { MoodBand } from './mood'
 import type {
   BASELINE_EXPRESSIONS,
   CUE_INTENTS,
@@ -155,19 +156,22 @@ export interface SpeechPhrase {
   intent: typeof PHRASE_INTENTS[number]
 }
 
-export type MoodBandName = 'floor' | 'sad' | 'tense' | 'calm' | 'excited'
-
 export interface MoodTransition {
   before: number
   after: number
   arousalBefore?: number
   arousalAfter?: number
-  bandBefore: MoodBandName
-  bandAfter: MoodBandName
+  bandBefore: MoodBand
+  bandAfter: MoodBand
   delta: number
   cause: string
   revision: number
 }
 
-/** What she is doing, as her state reports it. */
+/**
+ * What the figure acts her doing. Her state on the wire carries activity as a string
+ * (`MeropeStateEventDetail.activity`): core and the server write `idle`, `thinking`, `talking` and
+ * `working`, and a stale one reads as `idle`. A host maps it to one of these; `working` has no
+ * acting of its own and plays as `idle`.
+ */
 export type MeropeActivity = 'idle' | 'thinking' | 'talking'

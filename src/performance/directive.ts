@@ -1,5 +1,6 @@
-// What the director sends the figure and what her state reports, read off the wire: anything not in
-// the performance contract's words, or past its bounds, does not get through.
+// What the director sends the figure (a performance, in the envelope a page hands the figure) and what
+// her state reports, read off the wire: anything not in the performance contract's words, or past its
+// bounds, does not get through.
 import type {
   MoodTransition,
   PerformanceBaseline,
@@ -11,20 +12,70 @@ import {
   FACE_PRESETS,
   FACE_SHIFT_NAMES,
   MAX_FACES_PASSED,
-  PERFORMANCE_BASELINE_EXPRESSIONS,
-  PERFORMANCE_CUE_INTENTS,
-  PERFORMANCE_INTERRUPT_MODES,
-  PERFORMANCE_POSTURES,
   PLAIN_FACE,
   sanitizeBodyPose,
   sanitizeScore,
   sanitizeSpeechPhrases,
 } from './contract'
-import { isWord } from './vocabulary'
+import { BASELINE_EXPRESSIONS, CUE_INTENTS, INTERRUPT_MODES, isWord, POSTURES } from './vocabulary'
+
+export interface MeropePerformanceEventDetail {
+  text: string
+  source: 'reply' | 'proactive' | 'interaction' | 'preview'
+  messageId?: string
+  runId?: string
+  generation?: number
+  motionIntentId?: string
+  performance?: PerformanceDirective
+}
 
 export interface MeropeStateEventDetail {
   mood: MoodTransition
+  /**
+   * What she is doing, as core and the server write it: `idle`, `thinking`, `talking` or `working`
+   * today. Any string of at most 32 characters gets through, so a newer word does not drop the state.
+   */
   activity: string
+}
+
+export function meropePerformanceEventDetail(
+  value: unknown,
+): MeropePerformanceEventDetail | null {
+  if (!isRecord(value)) return null
+  const text =
+    typeof value.text === 'string' ? value.text.trim().slice(0, 2_000) : ''
+  const performance = sanitizePerformanceDirective(value.performance)
+  if (!text && !performance) return null
+  const source = ['reply', 'proactive', 'interaction', 'preview'].includes(
+    String(value.source),
+  )
+    ? (value.source as MeropePerformanceEventDetail['source'])
+    : 'reply'
+  const messageId =
+    typeof value.messageId === 'string'
+      ? value.messageId.trim().slice(0, 160)
+      : ''
+  const generation =
+    typeof value.generation === 'number' &&
+    Number.isFinite(value.generation) &&
+    value.generation > 0
+      ? Math.min(1_000_000_000, Math.trunc(value.generation))
+      : 0
+  const runId =
+    typeof value.runId === 'string' ? value.runId.trim().slice(0, 160) : ''
+  const motionIntentId =
+    typeof value.motionIntentId === 'string'
+      ? value.motionIntentId.trim().slice(0, 160)
+      : ''
+  return {
+    text,
+    source,
+    ...(messageId ? { messageId } : {}),
+    ...(runId ? { runId } : {}),
+    ...(generation ? { generation } : {}),
+    ...(motionIntentId ? { motionIntentId } : {}),
+    ...(performance ? { performance } : {}),
+  }
 }
 
 export function meropeStateEventDetail(
@@ -127,7 +178,8 @@ export function sanitizePerformanceDirective(
     plan: { ...(baseline ? { baseline } : {}), cues },
     ...(phrases.length ? { phrases } : {}),
     ...(score.length ? { score } : {}),
-    // A standing score's period, within the contract's bounds.
+    // A standing score's period, held to 6–60 s here. The bounds are not in the contract JSON; they
+    // mirror the director's own (core's STANDING_LOOP_MS falls inside them).
     ...(score.length && typeof value.loopMs === 'number' && Number.isFinite(value.loopMs)
       ? { loopMs: Math.max(6_000, Math.min(60_000, Math.round(value.loopMs))) }
       : {}),
@@ -153,8 +205,8 @@ function sanitizeBaseline(value: unknown): PerformanceBaseline | null {
   if (pose === null) return null
   if (!isRecord(value)) return null
   if (
-    !isWord(PERFORMANCE_BASELINE_EXPRESSIONS, value.expression) ||
-    !isWord(PERFORMANCE_POSTURES, value.posture) ||
+    !isWord(BASELINE_EXPRESSIONS, value.expression) ||
+    !isWord(POSTURES, value.posture) ||
     typeof value.motionEnergy !== 'number' ||
     !Number.isFinite(value.motionEnergy) ||
     typeof value.attention !== 'number' ||
@@ -177,8 +229,8 @@ function sanitizeBaseline(value: unknown): PerformanceBaseline | null {
 function sanitizeCue(value: unknown): PerformanceCue | null {
   if (!isRecord(value)) return null
   if (
-    !isWord(PERFORMANCE_CUE_INTENTS, value.intent) ||
-    !isWord(PERFORMANCE_INTERRUPT_MODES, value.interrupt)
+    !isWord(CUE_INTENTS, value.intent) ||
+    !isWord(INTERRUPT_MODES, value.interrupt)
   ) {
     return null
   }

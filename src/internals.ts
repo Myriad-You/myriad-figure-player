@@ -69,7 +69,4 @@ export { ANIME25D_LAYER_DEPTH, ANIME25D_LAYER_DESCRIPTORS } from './rig/anime25d
 export { anime25DBaseRole, anime25DLayerGroup, anime25DLayerNameParts, canonicalAnime25DLayerName, isAnime25DLiningPiece, isAnime25DRigidAttachment, normalizeAnime25DLayerName, resolveAnime25DLayerSemantics } from './rig/anime25dLayerSemantics'
 export type { ArmVariantGesture } from './rig/armGestures'
 export { ARM_VARIANT_GESTURES } from './rig/armGestures'
-export type { CharacterAssetProfile } from './rig/contract'
-export { CHARACTER_ASSET_PROFILES, MAX_RIG_BONES, MAX_RIG_PARTS, RIG_MATRIX_CAPACITY, RIG_SEMANTIC_BONE_ROLES, RIG_SEMANTIC_CHAIN_ROLES } from './rig/contract'
-export type { RigBone, RigCollisionVolume, RigMotionProfile, RigOutfitProfile, RigOutfitTopology, RigPart, RigPoint, RigQuality, RigSemanticAnchor, RigSemanticBoneRole, RigSemanticChainRole, RigSemantics, RigSize, RigSpatialProfile, RigTexture, RigVertex } from './rig/types'
-export { RIG_OUTFIT_TOPOLOGIES } from './rig/types'
+export { RIG_MATRIX_CAPACITY } from './rig/contract'
