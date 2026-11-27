@@ -41,8 +41,10 @@ tuning storage, camera input and recording are not included.
 --------------------------------------------------------------------------------
 contracts/merope_rig_contract.json
 contracts/merope_performance_contract.json
-Byte copies of shared/merope_rig_contract.json and
-shared/merope_performance_contract.json in myriad-core
+contracts/figure_package_conformance.json
+Byte copies of shared/merope_rig_contract.json,
+shared/merope_performance_contract.json and
+crates/conformance/v1/figure/package.json in myriad-core
 (https://github.com/Myriad-You/myriad-core), revision ed49fa7ea (recorded in
 contracts/core-revision, which CI checks the copies against). Not edited here.
 Their sole author licenses these files under the MIT License for this package;
